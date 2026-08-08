@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Roaster - Module 1</title>
+    <title>Resume Roaster</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -72,7 +72,7 @@
 <body>
     <div class="card">
         <h1>🔥 Resume Roaster</h1>
-        <p>Module 1: Testing Frontend-to-Backend Connection</p>
+        <p>AI-Powered Resume Analyzer & Roaster</p>
         <button id="roastBtn">Roast Me!</button>
         <div id="output">Click the button to test connection...</div>
     </div>
@@ -85,16 +85,12 @@
             outputDiv.textContent = "Connecting to backend server...";
 
             try {
-                // Send asynchronous POST request to Express backend
                 const response = await fetch('/roast', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
 
-                // Parse the JSON data received from the backend
                 const data = await response.json();
-
-                // Display the response message on the webpage UI
                 outputDiv.textContent = data.message;
             } catch (error) {
                 console.error("Connection Error:", error);
