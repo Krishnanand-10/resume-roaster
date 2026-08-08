@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Roaster - Module 1</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            color: #f97316;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+        }
+
+        button {
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.4);
+        }
+
+        #output {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px dashed rgba(249, 115, 22, 0.3);
+            color: #38bdf8;
+            font-weight: 500;
+            min-height: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>🔥 Resume Roaster</h1>
+        <p>Module 1: Testing Frontend-to-Backend Connection</p>
+        <button id="roastBtn">Roast Me!</button>
+        <div id="output">Click the button to test connection...</div>
+    </div>
+
+    <script>
+        const roastBtn = document.getElementById('roastBtn');
+        const outputDiv = document.getElementById('output');
+
+        roastBtn.addEventListener('click', async () => {
+            outputDiv.textContent = "Connecting to backend server...";
+
+            try {
+                // Send asynchronous POST request to Express backend
+                const response = await fetch('/roast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                // Parse the JSON data received from the backend
+                const data = await response.json();
+
+                // Display the response message on the webpage UI
+                outputDiv.textContent = data.message;
+            } catch (error) {
+                console.error("Connection Error:", error);
+                outputDiv.textContent = "❌ Error connecting to server.";
+            }
+        });
+    </script>
+</body>
+
+</html>

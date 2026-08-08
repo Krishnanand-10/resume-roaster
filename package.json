@@ -1,0 +1,25 @@
+{
+  "name": "resume-roaster",
+  "version": "1.0.0",
+  "description": "> An AI-powered resume analyzer and roaster built end-to-end touching frontend UI, document file parsing, and LLM API integrations.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Krishnanand-10/resume-roaster.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Krishnanand-10/resume-roaster/issues"
+  },
+  "homepage": "https://github.com/Krishnanand-10/resume-roaster#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
