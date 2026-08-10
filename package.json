@@ -20,6 +20,8 @@
   },
   "homepage": "https://github.com/Krishnanand-10/resume-roaster#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "express-fileupload": "^1.5.2",
+    "pdf-parse": "^2.4.5"
   }
 }

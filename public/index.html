@@ -1,103 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Roaster</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-
-        .card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 2.5rem;
-            border-radius: 1rem;
-            text-align: center;
-            max-width: 480px;
-            width: 90%;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-        }
-
-        h1 {
-            color: #f97316;
-            margin-bottom: 0.5rem;
-        }
-
-        p {
-            color: #94a3b8;
-            margin-bottom: 1.5rem;
-        }
-
-        button {
-            background: linear-gradient(135deg, #ea580c, #dc2626);
-            color: white;
-            border: none;
-            padding: 0.8rem 1.8rem;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.4);
-        }
-
-        #output {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px dashed rgba(249, 115, 22, 0.3);
-            color: #38bdf8;
-            font-weight: 500;
-            min-height: 24px;
-        }
-    </style>
+    <title>Resume Roaster - AI Resume Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-    <div class="card">
-        <h1>🔥 Resume Roaster</h1>
-        <p>AI-Powered Resume Analyzer & Roaster</p>
-        <button id="roastBtn">Roast Me!</button>
-        <div id="output">Click the button to test connection...</div>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 Resume Roaster</h1>
+            <p>Upload your resume to receive AI feedback and critique</p>
+        </div>
+
+        <div class="tabs">
+            <button type="button" class="tab-btn active" id="tabUpload">Upload File (.PDF / .TXT)</button>
+            <button type="button" class="tab-btn" id="tabPaste">Paste Raw Text</button>
+        </div>
+
+        <form id="roastForm">
+            <div class="tab-content active" id="contentUpload">
+                <div class="dropzone" id="dropzone">
+                    <div class="dropzone-icon">📄</div>
+                    <p>Drag & drop your resume file here, or <span>browse</span></p>
+                    <p style="font-size: 0.8rem; margin-top: 0.25rem;">Supports PDF and TXT files</p>
+                    <div class="file-selected" id="fileNameDisplay"></div>
+                </div>
+                <input type="file" id="fileInput" accept=".pdf,.txt">
+            </div>
+
+            <div class="tab-content" id="contentPaste">
+                <textarea id="textInput" placeholder="Paste your resume contents here..."></textarea>
+            </div>
+
+            <div class="options-group">
+                <label for="roastMode">Roast Mode:</label>
+                <select id="roastMode">
+                    <option value="savage">🔥 Savage Roast (Brutally Honest)</option>
+                    <option value="recruiter">💼 Recruiter Critique (Professional)</option>
+                    <option value="polish">✨ Executive Polish (Constructive)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Process Resume 🔥</button>
+        </form>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div id="resultContainer">
+            <div class="result-header">
+                <h3>✅ Resume Extracted</h3>
+                <div class="stats-badge">
+                    <span>Words: <strong id="statWords">0</strong></span>
+                    <span>Characters: <strong id="statChars">0</strong></span>
+                </div>
+            </div>
+            <div class="preview-box" id="previewBox"></div>
+        </div>
     </div>
 
-    <script>
-        const roastBtn = document.getElementById('roastBtn');
-        const outputDiv = document.getElementById('output');
-
-        roastBtn.addEventListener('click', async () => {
-            outputDiv.textContent = "Connecting to backend server...";
-
-            try {
-                const response = await fetch('/roast', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                const data = await response.json();
-                outputDiv.textContent = data.message;
-            } catch (error) {
-                console.error("Connection Error:", error);
-                outputDiv.textContent = "❌ Error connecting to server.";
-            }
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
-
 </html>
