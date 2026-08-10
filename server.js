@@ -1,6 +1,6 @@
 const express = require('express');
 const fileUpload = require('express-fileupload');
-const pdfParse = require('pdf-parse');
+const pdfModule = require('pdf-parse');
 
 const app = express();
 const PORT = 3000;
@@ -9,17 +9,30 @@ app.use(express.static('public'));
 app.use(express.json());
 app.use(fileUpload());
 
+async function extractPdfText(buffer) {
+    if (typeof pdfModule === 'function') {
+        const data = await pdfModule(buffer);
+        return data.text;
+    } else if (pdfModule.PDFParse) {
+        const parser = new pdfModule.PDFParse({ data: buffer });
+        const data = await parser.getText();
+        return data.text;
+    } else {
+        throw new Error('PDF parsing library incompatible');
+    }
+}
+
 app.post('/roast', async (req, res) => {
     try {
         let extractedText = '';
 
         if (req.files && req.files.resume) {
             const file = req.files.resume;
-            
-            if (file.mimetype === 'application/pdf') {
-                const pdfData = await pdfParse(file.data);
-                extractedText = pdfData.text;
-            } else if (file.mimetype === 'text/plain') {
+            const fileName = file.name.toLowerCase();
+
+            if (file.mimetype === 'application/pdf' || fileName.endsWith('.pdf')) {
+                extractedText = await extractPdfText(file.data);
+            } else if (file.mimetype === 'text/plain' || fileName.endsWith('.txt')) {
                 extractedText = file.data.toString('utf-8');
             } else {
                 return res.status(400).json({ error: 'Unsupported file format. Please upload a PDF or TXT file.' });
