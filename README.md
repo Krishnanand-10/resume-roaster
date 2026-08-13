@@ -25,10 +25,10 @@
   - Node.js + Express server baseline
   - Environment variable setup & API routing structure
   - Premium responsive Glassmorphism Web Interface
-- [ ] **Phase 2: Resume File Parsing**
+- [x] **Phase 2: Resume File Parsing**
   - PDF document parsing using `pdf-parse`
   - Plain text file processing and manual paste option
-- [ ] **Phase 3: AI Engine & Prompt Engineering**
+- [x] **Phase 3: AI Engine & Prompt Engineering**
   - Configurable Roast Modes (Savage Roast, Recruiter Critique, Executive Polish)
   - Scoring engine (Impact, Formatting, Buzzwords, Overused Clichés)
 - [ ] **Phase 4: Dynamic Visualization & UX Polish**

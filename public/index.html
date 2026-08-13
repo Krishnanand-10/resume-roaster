@@ -50,15 +50,98 @@
 
         <div class="error-message" id="errorMessage"></div>
 
+        <div class="loading-container" id="loadingContainer">
+            <div class="spinner"></div>
+            <p id="loadingStatusText">Firing up the roast engine...</p>
+        </div>
+
         <div id="resultContainer">
-            <div class="result-header">
-                <h3>✅ Resume Extracted</h3>
-                <div class="stats-badge">
-                    <span>Words: <strong id="statWords">0</strong></span>
-                    <span>Characters: <strong id="statChars">0</strong></span>
+            <div class="simulated-banner" id="simulatedBanner" style="display: none;">
+                ℹ️ Running in <strong>Simulated AI Mode</strong> (Add <code>OPENAI_API_KEY</code> to <code>.env</code> to connect live GPT model).
+            </div>
+
+            <div class="score-header-card">
+                <div class="score-circle-wrap">
+                    <div class="score-circle" id="overallScoreBadge">0</div>
+                    <div class="score-label">OVERALL SCORE</div>
+                </div>
+                <div class="score-headline-wrap">
+                    <div class="mode-tag" id="modeTag">🔥 Savage Roast</div>
+                    <blockquote class="roast-headline" id="roastHeadline">"Loading headline..."</blockquote>
+                    <div class="stats-badge">
+                        <span>Words: <strong id="statWords">0</strong></span>
+                        <span>Chars: <strong id="statChars">0</strong></span>
+                    </div>
                 </div>
             </div>
-            <div class="preview-box" id="previewBox"></div>
+
+            <div class="categories-grid">
+                <div class="category-card">
+                    <div class="category-header">
+                        <span>💥 Impact Metrics</span>
+                        <span id="scoreImpact">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="barImpact" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="category-card">
+                    <div class="category-header">
+                        <span>📐 Formatting & ATS</span>
+                        <span id="scoreFormatting">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="barFormatting" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="category-card">
+                    <div class="category-header">
+                        <span>⚡ Brevity & Readability</span>
+                        <span id="scoreBrevity">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="barBrevity" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="category-card">
+                    <div class="category-header">
+                        <span>🚫 Buzzword Index</span>
+                        <span id="scoreBuzzwords">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="barBuzzwords" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feedback-grid">
+                <div class="feedback-card strengths-card">
+                    <h4>👍 Strengths</h4>
+                    <ul id="strengthsList"></ul>
+                </div>
+                <div class="feedback-card weaknesses-card">
+                    <h4>⚠️ Critical Weaknesses</h4>
+                    <ul id="weaknessesList"></ul>
+                </div>
+            </div>
+
+            <div class="roast-narrative-card">
+                <div class="card-header-actions">
+                    <h3>🔥 The Critique</h3>
+                    <button type="button" class="copy-btn" id="copyRoastBtn">📋 Copy Report</button>
+                </div>
+                <div class="roast-text" id="roastNarrative"></div>
+            </div>
+
+            <div class="tips-card">
+                <h3>🚀 Quick Action Plan</h3>
+                <ol id="actionTipsList"></ol>
+            </div>
+
+            <details class="extracted-text-details">
+                <summary>📄 View Raw Extracted Resume Text</summary>
+                <div class="preview-box" id="previewBox"></div>
+            </details>
         </div>
     </div>
 
