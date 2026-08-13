@@ -13,7 +13,7 @@
     <div class="container">
         <div class="header">
             <h1>🔥 Resume Roaster</h1>
-            <p>Upload your resume to receive AI feedback and critique</p>
+            <p>Upload your resume to receive instant feedback, critique, and actionable improvements</p>
         </div>
 
         <div class="tabs">
@@ -36,16 +36,7 @@
                 <textarea id="textInput" placeholder="Paste your resume contents here..."></textarea>
             </div>
 
-            <div class="options-group">
-                <label for="roastMode">Roast Mode:</label>
-                <select id="roastMode">
-                    <option value="savage">🔥 Savage Roast (Brutally Honest)</option>
-                    <option value="recruiter">💼 Recruiter Critique (Professional)</option>
-                    <option value="polish">✨ Executive Polish (Constructive)</option>
-                </select>
-            </div>
-
-            <button type="submit" class="submit-btn" id="submitBtn">Process Resume 🔥</button>
+            <button type="submit" class="submit-btn" id="submitBtn">Roast & Analyze Resume 🔥</button>
         </form>
 
         <div class="error-message" id="errorMessage"></div>
@@ -72,7 +63,6 @@
                     <div class="score-label">OVERALL SCORE</div>
                 </div>
                 <div class="score-headline-wrap">
-                    <div class="mode-tag" id="modeTag">🔥 Savage Roast</div>
                     <blockquote class="roast-headline" id="roastHeadline">"Loading headline..."</blockquote>
                     <div class="stats-badge">
                         <span>Words: <strong id="statWords">0</strong></span>
@@ -122,6 +112,17 @@
                 </div>
             </div>
 
+            <div class="feedback-grid">
+                <div class="feedback-card strengths-card">
+                    <h4>👍 What is Good (Strengths)</h4>
+                    <ul id="strengthsList"></ul>
+                </div>
+                <div class="feedback-card weaknesses-card">
+                    <h4>⚠️ What Needs Improvement</h4>
+                    <ul id="weaknessesList"></ul>
+                </div>
+            </div>
+
             <div class="quoted-roasts-container" id="quotedRoastsContainer"></div>
 
             <div class="boosters-card" id="boostersCard" style="display: none;">
@@ -129,27 +130,16 @@
                 <ul id="boostersList"></ul>
             </div>
 
-            <div class="feedback-grid">
-                <div class="feedback-card strengths-card">
-                    <h4>👍 Strengths</h4>
-                    <ul id="strengthsList"></ul>
-                </div>
-                <div class="feedback-card weaknesses-card">
-                    <h4>⚠️ Critical Weaknesses</h4>
-                    <ul id="weaknessesList"></ul>
-                </div>
-            </div>
-
             <div class="roast-narrative-card">
                 <div class="card-header-actions">
-                    <h3>🔥 The Critique</h3>
+                    <h3>🔥 The Roast & Critique</h3>
                     <button type="button" class="copy-btn" id="copyRoastBtn">📋 Copy Report</button>
                 </div>
                 <div class="roast-text" id="roastNarrative"></div>
             </div>
 
             <div class="tips-card">
-                <h3>🚀 Quick Action Plan</h3>
+                <h3>🚀 Action Plan</h3>
                 <ol id="actionTipsList"></ol>
             </div>
 

@@ -28,47 +28,39 @@ async function extractPdfText(buffer) {
     }
 }
 
-const RUBRIC_SYSTEM_PROMPT = `You are the Resume Roaster AI Engine evaluating candidate resumes against an elite multi-step Instruction Rubric.
+const RUBRIC_SYSTEM_PROMPT = `You are the Resume Roaster AI Engine evaluating candidate resumes. Provide a single, comprehensive analysis with clear breakdown:
 
 --- STEP 0: CLASSIFICATION & TARGET ROLE EXTRACTION ---
 1. Field: Detect one of [Tech, Marketing, Sales, Finance, Design, HR, Operations, Education, Other].
 2. Target Role: Extract a crisp professional title (e.g. "Full Stack Developer", "Data Scientist", "Software Engineer", "Marketing Manager", "UI/UX Designer"). NEVER leave empty or generic.
 3. Experience Level: Detect one of [Student/Fresher, 0–3 yrs, 3–8 yrs, 8+ yrs].
 
---- STEP 1 & 2: SECTION EVALUATION & FIELD PROOF-OF-WORK ---
-Evaluate scores (0-100) for sections:
+--- STEP 1 & 2: SECTION EVALUATION & PROOF-OF-WORK ---
+Evaluate scores (0-100) for:
 - contact: Email, phone, professional links (GitHub, portfolio, LinkedIn).
 - skills: Relevant technical tools, verified by evidence in projects/experience.
 - projects: Tier-1 Baseline Gate. Check 1-2 detailed projects, ownership links, non-clone depth.
 - experience: Quantified impact (% / $ / scale), strong action verbs (Led, Built, Scaled), metric density.
 - achievements: Tier-2 Bonus. Awards, hackathons, publications, certs.
 - language: Grammar, passive voice, zero buzzwords (synergy, results-driven, go-getter), objective fluff.
-- formatting: ATS readability, 1-2 page length appropriateness, structure.
-- careerNarrative: Career progression logic, unexplained gaps.
-
-Apply Field Proof-of-Work Matrix:
-- Tech: Deployed links, GitHub, deep stack details beyond basic tutorials.
-- Marketing/Sales: Campaign ROI, quota %, pipeline $, case studies.
-- Design: Portfolio link (Behance/Dribbble), design deliverables.
-- Finance/Ops: Cost saved, models built, process efficiency.
-- HR: Hires made, retention %, programs launched.
+- formatting: ATS readability, structure.
+- careerNarrative: Career progression logic.
 
 --- STEP 3: GATED SCORING LOGIC ---
 Calculate baseline_score = (skills * 0.4) + (projects * 0.6).
 If baseline_score < 50:
 - Flag: "achievement_without_foundation"
-- Cap overallScore at Math.min(baseline_score + 10, 55). Achievements bonus = 0.
+- Cap overallScore at Math.min(baseline_score + 10, 55).
 Else:
 - Compute weighted overallScore across sections.
 
---- STEP 4 & 5: QUOTE-BASED ROAST, CONSTRUCTIVE FIXES & PROFILE BOOSTERS ---
-1. Quote specific text lines from candidate's resume for every roast.
-2. Pair every roast with a concrete, actionable fix.
-3. Priority targets: Unbacked achievements, vague unquantified claims, buzzword objectives, skill/evidence contradictions, generic clone projects.
-4. Final Verdict: One-line brutal burn + top 3 action items.
-5. Provide 3 Strategic Resume Boosters tailored specifically to the candidate's field (e.g. Hackathon wins, open-source contributions, deployed live apps, industry certs, campaign ROI case studies).
+--- STEP 4 & 5: THREE KEY OUTPUT SECTIONS ---
+1. WHAT IS GOOD: Highlight 2-3 genuine strengths of the resume.
+2. WHAT NEEDS IMPROVEMENT: Highlight 2-3 critical weaknesses with actionable fixes.
+3. THE ROAST: Provide a sharp, witty, brutally honest critique quoting exact resume lines paired with concrete fixes.
+4. PROFILE BOOSTERS: Provide 3 high-impact profile additions (e.g. Hackathons, Live Demos, Certifications).
 
-You must respond strictly in JSON matching this schema:
+Respond strictly in JSON matching this schema:
 {
   "classification": {
     "field": "<Tech/Marketing/Sales/Finance/Design/HR/Operations/Education/Other>",
@@ -107,10 +99,7 @@ You must respond strictly in JSON matching this schema:
   ]
 }`;
 
-function generateSimulatedRoast(resumeText, mode, wordCount) {
-    const isSavage = mode === 'savage';
-    const isPolish = mode === 'polish';
-
+function generateSimulatedRoast(resumeText, wordCount) {
     const lines = resumeText.split('\n').map(l => l.trim()).filter(l => l.length > 5);
     const numbersMatches = resumeText.match(/\d+%/g) || resumeText.match(/\d+/g) || [];
     const numberCount = numbersMatches.length;
@@ -182,13 +171,11 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
 
     const candidateName = lines.length > 0 && lines[0].length < 35 ? lines[0] : "Candidate";
 
-    let headline = isSavage
-        ? (numberCount === 0 ? `"${candidateName}'s resume has zero hard metrics to back up their claims!"` : `"${candidateName} lists skills, but needs deeper project evidence."`)
-        : (isPolish ? `"${candidateName}'s profile is well-structured for ${detectedRole} positioning."` : `"${candidateName}'s resume provides a solid foundation with clear technical skills."`);
+    let headline = numberCount === 0
+        ? `"${candidateName}'s resume has zero hard metrics to back up their claims!"`
+        : `"${candidateName}'s resume lists skills, but needs deeper project metrics."`;
 
-    let verdict = isSavage
-        ? `Verdict: Resume evaluated for ${detectedRole}. ${numberCount === 0 ? 'Lacks measurable impact data.' : 'Needs stronger action verbs and live project links.'}`
-        : `Verdict: Target role identified as ${detectedRole}. Enhance metric density to maximize callback rates.`;
+    let verdict = `Verdict: Evaluated for ${detectedRole}. ${numberCount === 0 ? 'Needs measurable impact numbers over duties.' : 'Needs stronger action verbs and live project URLs.'}`;
 
     const sampleQuotes = [];
     lines.forEach(l => {
@@ -203,19 +190,19 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
         if (idx === 0) {
             return {
                 quote: q,
-                roast: isSavage ? `Describes tasks rather than actual results achieved.` : `Focuses on responsibilities instead of measurable outcomes.`,
-                fix: `Quantify impact (e.g. 'Delivered feature boosting efficiency by 25%').`
+                roast: `Describes daily duties rather than actual results achieved.`,
+                fix: `Quantify impact (e.g. 'Delivered feature boosting performance by 25%').`
             };
         } else if (idx === 1) {
             return {
                 quote: q,
-                roast: isSavage ? `Generic phrasing that fails to show your technical ownership.` : `Could use stronger technical action verbs.`,
-                fix: `Replace vague verbs with power verbs like 'Architected', 'Spearheaded', or 'Engineered'.`
+                roast: `Generic phrasing that fails to show technical ownership.`,
+                fix: `Replace weak verbs with power verbs like 'Architected', 'Spearheaded', or 'Engineered'.`
             };
         } else {
             return {
                 quote: q,
-                roast: isSavage ? `Missing verified live link or metrics to validate this claim.` : `Add proof link or metrics to validate this item.`,
+                roast: `Missing verified live link or metrics to validate this claim.`,
                 fix: `Include a GitHub repository URL or live project demo link.`
             };
         }
@@ -223,12 +210,12 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
 
     const strengths = [];
     if (extractedSkills.length > 0) strengths.push(`Identifies technical skills: ${extractedSkills.slice(0, 4).join(', ')}`);
-    if (extractedLinks.length > 0) strengths.push(`Provides verified online links: ${extractedLinks[0]}`);
-    if (numberCount > 0) strengths.push(`Contains ${numberCount} quantifiable numbers/metrics`);
-    if (strengths.length < 2) strengths.push(`Appropriate document length for quick screening`);
+    if (extractedLinks.length > 0) strengths.push(`Provides verified online profile links: ${extractedLinks[0]}`);
+    if (numberCount > 0) strengths.push(`Contains ${numberCount} quantitative metrics`);
+    if (strengths.length < 2) strengths.push(`Clean document length suitable for ATS scanning`);
 
     const weaknesses = [];
-    if (numberCount === 0) weaknesses.push(`Lacks concrete quantifiable metrics (% growth, $ saved, users served)`);
+    if (numberCount === 0) weaknesses.push(`Lacks concrete quantitative metrics (% growth, $ saved, scale)`);
     if (extractedLinks.length === 0) weaknesses.push(`Missing GitHub / portfolio demo links to verify project claims`);
     if (buzzwordMatches.length > 0) weaknesses.push(`Contains buzzwords (${buzzwordMatches.slice(0, 2).join(', ')}) instead of direct proof`);
     if (weaknesses.length < 2) weaknesses.push(`Bullet points describe duties rather than measurable accomplishments`);
@@ -236,7 +223,7 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
     let boosters = [];
     if (detectedField === "Tech") {
         boosters = [
-            "🏆 **Hackathon Win / Award**: Winning or competing in a hackathon (e.g. Devpost, ETHIndia) proves real-world pressure testing.",
+            "🏆 **Hackathon Win / Competition**: Winning or competing in a hackathon (e.g. Devpost, ETHIndia) proves real-world execution under tight deadlines.",
             "🚀 **Live Deployed Product Demos**: Add working Vercel/Render links for your top projects so recruiters can test your apps.",
             "📜 **Cloud Certifications**: Earning an AWS Certified Developer or Meta Certificate adds recognized industry validation."
         ];
@@ -274,9 +261,7 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
         strengths,
         weaknesses,
         roasts: generatedRoasts,
-        roast: isSavage
-            ? `Analyzing ${candidateName}'s resume for ${detectedRole}: Out of ${wordCount} words, we found ${extractedSkills.length} key skills (${extractedSkills.slice(0, 3).join(', ') || 'general'}) and ${numberCount} metrics. ${numberCount === 0 ? 'Without hard numbers, your bullet points sound like a job description list rather than a proof of achievements.' : 'To jump into top candidate tiers, add live demo links and lead with stronger action verbs.'}`
-            : `Your background as ${detectedRole} shows good foundational skills in ${extractedSkills.slice(0, 3).join(', ') || 'your field'}. Focus on quantifying your outcomes to significantly increase callback rates.`,
+        roast: `Analysis for ${candidateName} (${detectedRole}): Out of ${wordCount} words, found ${extractedSkills.length} key skills (${extractedSkills.slice(0, 3).join(', ') || 'general'}) and ${numberCount} metrics. ${numberCount === 0 ? 'Without hard numbers, your bullet points sound like a job description list rather than proof of achievement.' : 'Add live demo links and lead with stronger action verbs to jump into top candidate tiers.'}`,
         topFixes: [
             numberCount === 0 ? "Add specific numbers (% growth, users, scale) to every bullet point." : "Lead bullet points with high-impact action verbs (Engineered, Scaled).",
             extractedLinks.length === 0 ? "Add GitHub or live demo links for your top 2 projects." : "Expand on project architecture and individual contribution.",
@@ -287,13 +272,13 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
     };
 }
 
-async function generateAiRoast(resumeText, mode, wordCount) {
+async function generateAiRoast(resumeText, wordCount) {
     if (!openai) {
-        return generateSimulatedRoast(resumeText, mode, wordCount);
+        return generateSimulatedRoast(resumeText, wordCount);
     }
 
     try {
-        const userPrompt = `Analyze and evaluate the following resume text (${wordCount} words) in ${mode.toUpperCase()} mode:
+        const userPrompt = `Analyze and evaluate the following resume text (${wordCount} words):
 
 --- RESUME TEXT START ---
 ${resumeText.slice(0, 4000)}
@@ -306,7 +291,7 @@ ${resumeText.slice(0, 4000)}
                 { role: 'system', content: RUBRIC_SYSTEM_PROMPT },
                 { role: 'user', content: userPrompt }
             ],
-            temperature: mode === 'savage' ? 0.8 : 0.5,
+            temperature: 0.7,
             max_tokens: 1200
         });
 
@@ -322,7 +307,7 @@ ${resumeText.slice(0, 4000)}
         return parsedContent;
     } catch (err) {
         console.error('OpenAI API call failed, using fallback engine:', err.message);
-        const fallbackResult = generateSimulatedRoast(resumeText, mode, wordCount);
+        const fallbackResult = generateSimulatedRoast(resumeText, wordCount);
         fallbackResult.apiError = err.message;
         return fallbackResult;
     }
@@ -331,7 +316,6 @@ ${resumeText.slice(0, 4000)}
 app.post('/roast', async (req, res) => {
     try {
         let extractedText = '';
-        const roastMode = (req.body && req.body.roastMode) || 'savage';
 
         if (req.files && req.files.resume) {
             const file = req.files.resume;
@@ -359,14 +343,13 @@ app.post('/roast', async (req, res) => {
         const wordCount = extractedText.split(/\s+/).filter(Boolean).length;
         const characterCount = extractedText.length;
 
-        const aiAnalysis = await generateAiRoast(extractedText, roastMode, wordCount);
+        const aiAnalysis = await generateAiRoast(extractedText, wordCount);
 
         res.json({
             success: true,
             extractedText: extractedText,
             characterCount: characterCount,
             wordCount: wordCount,
-            roastMode: roastMode,
             analysis: aiAnalysis,
             message: 'Resume analyzed successfully!'
         });

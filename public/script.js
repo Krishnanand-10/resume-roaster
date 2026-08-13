@@ -6,7 +6,6 @@ const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
 const fileNameDisplay = document.getElementById('fileNameDisplay');
 const textInput = document.getElementById('textInput');
-const roastModeSelect = document.getElementById('roastMode');
 const roastForm = document.getElementById('roastForm');
 const submitBtn = document.getElementById('submitBtn');
 const errorMessage = document.getElementById('errorMessage');
@@ -19,7 +18,6 @@ const gatingBanner = document.getElementById('gatingBanner');
 const classificationBar = document.getElementById('classificationBar');
 const verdictBanner = document.getElementById('verdictBanner');
 const overallScoreBadge = document.getElementById('overallScoreBadge');
-const modeTag = document.getElementById('modeTag');
 const roastHeadline = document.getElementById('roastHeadline');
 const statWords = document.getElementById('statWords');
 const statChars = document.getElementById('statChars');
@@ -45,12 +43,6 @@ const previewBox = document.getElementById('previewBox');
 
 let activeTab = 'upload';
 let loadingInterval = null;
-
-const MODE_NAMES = {
-    savage: '🔥 Savage Roast',
-    recruiter: '💼 Recruiter Critique',
-    polish: '✨ Executive Polish'
-};
 
 tabUpload.addEventListener('click', () => {
     activeTab = 'upload';
@@ -98,7 +90,6 @@ function updateFileDisplay() {
 
 copyRoastBtn.addEventListener('click', () => {
     const reportText = `🔥 RESUME ROASTER REPORT 🔥
-Mode: ${modeTag.textContent}
 Overall Score: ${overallScoreBadge.textContent}/100
 Headline: ${roastHeadline.textContent}
 ${verdictBanner.textContent ? '\n' + verdictBanner.textContent + '\n' : ''}
@@ -120,8 +111,6 @@ roastForm.addEventListener('submit', async (e) => {
     resultContainer.style.display = 'none';
 
     const formData = new FormData();
-    const selectedMode = roastModeSelect.value;
-    formData.append('roastMode', selectedMode);
 
     if (activeTab === 'upload') {
         if (fileInput.files.length === 0) {
@@ -161,7 +150,7 @@ roastForm.addEventListener('submit', async (e) => {
     } finally {
         stopLoadingAnimation();
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Process Resume 🔥';
+        submitBtn.textContent = 'Roast & Analyze Resume 🔥';
     }
 });
 
@@ -172,7 +161,7 @@ function startLoadingAnimation() {
         'Checking Tier-1 baseline project gates...',
         'Auditing metric density & action verbs...',
         'Generating strategic profile boosters...',
-        'Finalizing your instruction rubric evaluation...'
+        'Finalizing your evaluation report...'
     ];
     let msgIdx = 0;
     loadingStatusText.textContent = statusMessages[0];
@@ -218,7 +207,6 @@ function renderAnalysisResults(data) {
 
     statWords.textContent = data.wordCount;
     statChars.textContent = data.characterCount;
-    modeTag.textContent = MODE_NAMES[data.roastMode] || '🔥 Savage Roast';
     roastHeadline.textContent = `"${analysis.headline || ''}"`;
 
     const score = Math.round(analysis.overallScore || 0);
@@ -230,6 +218,9 @@ function renderAnalysisResults(data) {
     setCategoryBar('Formatting', cats.formatting || 0);
     setCategoryBar('Brevity', cats.brevity || cats.formatting || 0);
     setCategoryBar('Buzzwords', cats.buzzwords || cats.language || 0);
+
+    strengthsList.innerHTML = (analysis.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
+    weaknessesList.innerHTML = (analysis.weaknesses || []).map(w => `<li>${escapeHtml(w)}</li>`).join('');
 
     if (analysis.roasts && analysis.roasts.length > 0) {
         quotedRoastsContainer.innerHTML = '<h4>🔥 Quoted Line Critique & Fixes</h4>' + analysis.roasts.map(r => `
@@ -250,9 +241,6 @@ function renderAnalysisResults(data) {
     } else {
         boostersCard.style.display = 'none';
     }
-
-    strengthsList.innerHTML = (analysis.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
-    weaknessesList.innerHTML = (analysis.weaknesses || []).map(w => `<li>${escapeHtml(w)}</li>`).join('');
 
     roastNarrative.textContent = analysis.roast || '';
 
