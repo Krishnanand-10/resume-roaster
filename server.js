@@ -16,15 +16,19 @@ const openai = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'you
     : null;
 
 async function extractPdfText(buffer) {
-    if (typeof pdfModule === 'function') {
-        const data = await pdfModule(buffer);
-        return data.text;
-    } else if (pdfModule.PDFParse) {
-        const parser = new pdfModule.PDFParse({ data: buffer });
-        const data = await parser.getText();
-        return data.text;
-    } else {
-        throw new Error('PDF parsing library incompatible');
+    try {
+        if (typeof pdfModule === 'function') {
+            const data = await pdfModule(buffer);
+            return (data && data.text) ? data.text : '';
+        } else if (pdfModule.PDFParse) {
+            const parser = new pdfModule.PDFParse({ data: buffer });
+            const data = await parser.getText();
+            return (data && data.text) ? data.text : '';
+        } else {
+            throw new Error('PDF parsing library incompatible');
+        }
+    } catch (err) {
+        throw new Error('PDF Parse Failed: ' + err.message);
     }
 }
 
@@ -322,7 +326,12 @@ app.post('/roast', async (req, res) => {
             const fileName = file.name.toLowerCase();
 
             if (file.mimetype === 'application/pdf' || fileName.endsWith('.pdf')) {
-                extractedText = await extractPdfText(file.data);
+                try {
+                    extractedText = await extractPdfText(file.data);
+                } catch (pdfErr) {
+                    console.error('PDF Parsing error:', pdfErr);
+                    return res.status(400).json({ error: 'Could not extract text from this PDF file. It may be scanned (image-only), encrypted, or missing selectable text. Try converting it to TXT or pasting raw text.' });
+                }
             } else if (file.mimetype === 'text/plain' || fileName.endsWith('.txt')) {
                 extractedText = file.data.toString('utf-8');
             } else {
@@ -334,10 +343,10 @@ app.post('/roast', async (req, res) => {
             return res.status(400).json({ error: 'Please upload a resume file or paste your resume text.' });
         }
 
-        extractedText = extractedText.trim();
+        extractedText = (extractedText || '').trim();
 
         if (!extractedText) {
-            return res.status(400).json({ error: 'Could not extract readable text from the provided resume.' });
+            return res.status(400).json({ error: 'Could not extract readable text from the provided resume file. Please ensure it contains selectable text, or paste your text directly.' });
         }
 
         const wordCount = extractedText.split(/\s+/).filter(Boolean).length;
@@ -355,7 +364,7 @@ app.post('/roast', async (req, res) => {
         });
     } catch (err) {
         console.error('Extraction error:', err);
-        res.status(500).json({ error: 'Failed to process and analyze the resume.' });
+        res.status(500).json({ error: `Failed to process resume: ${err.message || 'Unknown error'}` });
     }
 });
 
