@@ -197,10 +197,14 @@ function renderAnalysisResults(data) {
     }
 
     const cls = analysis.classification || {};
+    const detectedField = cls.field || cls.domain || cls.industry || 'Tech';
+    const detectedTargetRole = cls.targetRole || cls.target_role || cls.role || cls.jobTitle || cls.job_title || 'Software Engineer';
+    const detectedLevel = cls.experienceLevel || cls.experience_level || cls.level || '0-3 yrs';
+
     classificationBar.innerHTML = `
-        <span class="class-tag">🎯 Field: ${escapeHtml(cls.field || 'General')}</span>
-        <span class="class-tag">💼 Target Role: ${escapeHtml(cls.targetRole || 'Detected Role')}</span>
-        <span class="class-tag">📈 Level: ${escapeHtml(cls.experienceLevel || '0-3 yrs')}</span>
+        <span class="class-tag">🎯 Field: ${escapeHtml(detectedField)}</span>
+        <span class="class-tag">💼 Target Role: ${escapeHtml(detectedTargetRole)}</span>
+        <span class="class-tag">📈 Level: ${escapeHtml(detectedLevel)}</span>
     `;
 
     if (analysis.verdict) {

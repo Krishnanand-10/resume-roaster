@@ -32,7 +32,7 @@ const RUBRIC_SYSTEM_PROMPT = `You are the Resume Roaster AI Engine evaluating ca
 
 --- STEP 0: CLASSIFICATION & TARGET ROLE EXTRACTION ---
 1. Field: Detect one of [Tech, Marketing, Sales, Finance, Design, HR, Operations, Education, Other].
-2. Target Role: Automatically extract the primary target job title/role directly from the candidate's resume text (e.g. Full Stack Engineer, Growth Marketer, Data Analyst, UI Designer).
+2. Target Role: Extract a crisp professional title (e.g. "Full Stack Developer", "Data Scientist", "Software Engineer", "Marketing Manager", "UI/UX Designer"). NEVER leave empty or generic.
 3. Experience Level: Detect one of [Student/Fresher, 0–3 yrs, 3–8 yrs, 8+ yrs].
 
 --- STEP 1 & 2: SECTION EVALUATION & FIELD PROOF-OF-WORK ---
@@ -71,7 +71,7 @@ You must respond strictly in JSON matching this schema:
 {
   "classification": {
     "field": "<Tech/Marketing/Sales/Finance/Design/HR/Operations/Education/Other>",
-    "targetRole": "<Extracted Target Role from Resume>",
+    "targetRole": "<Specific Target Job Role Title>",
     "experienceLevel": "<Student/Fresher / 0–3 yrs / 3–8 yrs / 8+ yrs>"
   },
   "overallScore": <number 0-100>,
@@ -132,23 +132,26 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
     }
 
     let detectedField = "Tech";
-    let detectedRole = "Software Developer";
+    let detectedRole = "Software Engineer";
 
-    if (/(react|node|full stack|web developer|frontend|backend)/i.test(resumeText)) {
+    if (/(data scientist|machine learning|python|pandas|ai|deep learning)/i.test(resumeText)) {
         detectedField = "Tech";
-        detectedRole = "Full Stack Web Developer";
-    } else if (/(data scientist|machine learning|python|pandas|ai)/i.test(resumeText)) {
+        detectedRole = "Data Scientist";
+    } else if (/(react|node|full stack|web developer|frontend|backend|javascript|developer|engineer|software|code)/i.test(resumeText)) {
         detectedField = "Tech";
-        detectedRole = "Data Scientist / AI Engineer";
+        detectedRole = "Software Engineer";
     } else if (/(marketing|seo|campaign|sales|revenue|quota|conversion)/i.test(resumeText)) {
         detectedField = "Marketing/Sales";
-        detectedRole = "Growth Marketing Specialist";
+        detectedRole = "Marketing Specialist";
     } else if (/(accounting|finance|audit|financial|budget|tax)/i.test(resumeText)) {
         detectedField = "Finance";
         detectedRole = "Financial Analyst";
     } else if (/(design|figma|ui|ux|adobe|photoshop)/i.test(resumeText)) {
         detectedField = "Design";
         detectedRole = "UI/UX Designer";
+    } else {
+        detectedField = "General Professional";
+        detectedRole = "Professional Candidate";
     }
 
     let expLevel = wordCount > 400 ? "3–8 yrs" : (wordCount > 200 ? "0–3 yrs" : "Student/Fresher");
