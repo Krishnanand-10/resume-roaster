@@ -381,6 +381,8 @@ select option {
     display: flex;
     align-items: flex-start;
     gap: 0.4rem;
+}
+
 .boosters-card {
     background: rgba(15, 23, 42, 0.7);
     border: 1px solid rgba(56, 189, 248, 0.35);
@@ -410,8 +412,6 @@ select option {
     border-radius: 0.5rem;
     border: 1px solid rgba(56, 189, 248, 0.15);
 }
-
-
 
 .loading-container {
     display: none;
@@ -729,5 +729,3 @@ select option {
 .extracted-text-details .preview-box {
     margin-top: 0.75rem;
 }
-
-
