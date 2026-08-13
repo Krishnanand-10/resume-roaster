@@ -61,11 +61,12 @@ If baseline_score < 50:
 Else:
 - Compute weighted overallScore across sections.
 
---- STEP 4 & 5: QUOTE-BASED ROAST & CONSTRUCTIVE FIXES ---
-1. Quote specific text lines from the candidate's resume for every roast.
+--- STEP 4 & 5: QUOTE-BASED ROAST, CONSTRUCTIVE FIXES & PROFILE BOOSTERS ---
+1. Quote specific text lines from candidate's resume for every roast.
 2. Pair every roast with a concrete, actionable fix.
 3. Priority targets: Unbacked achievements, vague unquantified claims, buzzword objectives, skill/evidence contradictions, generic clone projects.
 4. Final Verdict: One-line brutal burn + top 3 action items.
+5. Provide 3 Strategic Resume Boosters tailored specifically to the candidate's field (e.g. Hackathon wins, open-source contributions, deployed live apps, industry certs, campaign ROI case studies).
 
 You must respond strictly in JSON matching this schema:
 {
@@ -98,7 +99,12 @@ You must respond strictly in JSON matching this schema:
     }
   ],
   "roast": "<full narrative critique summary>",
-  "topFixes": ["<priority fix 1>", "<priority fix 2>", "<priority fix 3>"]
+  "topFixes": ["<priority fix 1>", "<priority fix 2>", "<priority fix 3>"],
+  "resumeBoosters": [
+    "<High-impact profile booster suggestion 1 (e.g. Hackathons, Live Demos)>",
+    "<High-impact profile booster suggestion 2 (e.g. Certifications, Open Source)>",
+    "<High-impact profile booster suggestion 3 (e.g. Case Studies, Metrics)>"
+  ]
 }`;
 
 function generateSimulatedRoast(resumeText, mode, wordCount) {
@@ -166,6 +172,27 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
 
     let sampleQuote = resumeText.slice(0, 60);
 
+    let boosters = [];
+    if (detectedField === "Tech") {
+        boosters = [
+            "🏆 **Hackathon & Competition Win**: Win or place top-3 in a hackathon (e.g. ETHIndia, Devpost) to showcase real-world execution under tight deadlines.",
+            "🚀 **Live Deployed Product Demos**: Deploy your top projects live to Vercel/Render with public URLs so recruiters can test your apps instantly.",
+            "📜 **Recognized Cloud Certifications**: Earning an AWS Certified Developer or Meta Frontend Certificate adds recognized industry credibility."
+        ];
+    } else if (detectedField === "Marketing/Sales") {
+        boosters = [
+            "📈 **Campaign ROI Case Studies**: Build a 1-page portfolio showcasing total ad spend vs revenue generated or user lead growth %.",
+            "📜 **Google / Meta Analytics Certifications**: Complete Google Analytics 4 (GA4) or Meta Certified Digital Marketing Associate certs.",
+            "🏆 **Sales Award / Quota Overachievement**: Highlight ranking top 5% among sales reps or achieving 125%+ of quarterly quota."
+        ];
+    } else {
+        boosters = [
+            "🏆 **Industry Competition / Recognition**: Participate in domain competitions or publish case study articles on Medium/LinkedIn.",
+            "📜 **Specialized Professional Certifications**: Earn specialized certifications relevant to your field to validate core technical mastery.",
+            "🚀 **Public Portfolio / Case Study Hub**: Publish a personal portfolio website or Notion hub showcasing verified project deliverables."
+        ];
+    }
+
     return {
         classification: {
             field: detectedField,
@@ -212,6 +239,7 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
             "Replace generic self-praise with direct technical proof.",
             "Add GitHub or live demo links for your top projects."
         ],
+        resumeBoosters: boosters,
         isSimulated: true
     };
 }

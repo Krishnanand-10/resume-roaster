@@ -34,6 +34,8 @@ const scoreBuzzwords = document.getElementById('scoreBuzzwords');
 const barBuzzwords = document.getElementById('barBuzzwords');
 
 const quotedRoastsContainer = document.getElementById('quotedRoastsContainer');
+const boostersCard = document.getElementById('boostersCard');
+const boostersList = document.getElementById('boostersList');
 const strengthsList = document.getElementById('strengthsList');
 const weaknessesList = document.getElementById('weaknessesList');
 const roastNarrative = document.getElementById('roastNarrative');
@@ -169,7 +171,7 @@ function startLoadingAnimation() {
         'Extracting target role & field from resume...',
         'Checking Tier-1 baseline project gates...',
         'Auditing metric density & action verbs...',
-        'Pairing quoted roasts with constructive fixes...',
+        'Generating strategic profile boosters...',
         'Finalizing your instruction rubric evaluation...'
     ];
     let msgIdx = 0;
@@ -242,6 +244,13 @@ function renderAnalysisResults(data) {
         quotedRoastsContainer.style.display = 'none';
     }
 
+    if (analysis.resumeBoosters && analysis.resumeBoosters.length > 0) {
+        boostersList.innerHTML = analysis.resumeBoosters.map(b => `<li>${formatMarkdownText(b)}</li>`).join('');
+        boostersCard.style.display = 'block';
+    } else {
+        boostersCard.style.display = 'none';
+    }
+
     strengthsList.innerHTML = (analysis.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
     weaknessesList.innerHTML = (analysis.weaknesses || []).map(w => `<li>${escapeHtml(w)}</li>`).join('');
 
@@ -273,4 +282,9 @@ function escapeHtml(str) {
     return str.replace(/[&<>"']/g, function(m) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
     });
+}
+
+function formatMarkdownText(str) {
+    let escaped = escapeHtml(str);
+    return escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 }
