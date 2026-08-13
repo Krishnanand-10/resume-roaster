@@ -101,9 +101,9 @@ You must respond strictly in JSON matching this schema:
   "roast": "<full narrative critique summary>",
   "topFixes": ["<priority fix 1>", "<priority fix 2>", "<priority fix 3>"],
   "resumeBoosters": [
-    "<High-impact profile booster suggestion 1 (e.g. Hackathons, Live Demos)>",
-    "<High-impact profile booster suggestion 2 (e.g. Certifications, Open Source)>",
-    "<High-impact profile booster suggestion 3 (e.g. Case Studies, Metrics)>"
+    "<High-impact profile booster suggestion 1>",
+    "<High-impact profile booster suggestion 2>",
+    "<High-impact profile booster suggestion 3>"
   ]
 }`;
 
@@ -111,18 +111,39 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
     const isSavage = mode === 'savage';
     const isPolish = mode === 'polish';
 
-    const hasNumbers = /\d+/.test(resumeText);
-    const hasBuzzwords = /(synergy|passionate|hardworking|thought leader|ninja|rockstar|go-getter|detail-oriented)/i.test(resumeText);
-    const hasLinks = /(github\.com|linkedin\.com|http|https|\.io|\.com|\.dev)/i.test(resumeText);
+    const lines = resumeText.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+    const numbersMatches = resumeText.match(/\d+%/g) || resumeText.match(/\d+/g) || [];
+    const numberCount = numbersMatches.length;
+    const hasBuzzwords = /(synergy|passionate|hardworking|thought leader|ninja|rockstar|go-getter|detail-oriented|results-driven|team player)/i.test(resumeText);
+    const buzzwordMatches = resumeText.match(/(synergy|passionate|hardworking|thought leader|ninja|rockstar|go-getter|detail-oriented|results-driven|team player)/gi) || [];
 
-    let contactScore = hasLinks ? 85 : 60;
-    let skillsScore = Math.min(90, Math.max(45, Math.floor(wordCount / 4)));
-    let projectsScore = hasLinks ? 78 : 42;
-    let experienceScore = hasNumbers ? 75 : 45;
-    let achievementsScore = hasNumbers ? 70 : 40;
-    let languageScore = hasBuzzwords ? 45 : 82;
-    let formattingScore = Math.min(88, Math.max(50, Math.floor(wordCount / 4.5)));
-    let careerNarrativeScore = wordCount > 150 ? 75 : 50;
+    const githubMatches = resumeText.match(/(github\.com\/[^\s\)]+)/i);
+    const linkedinMatches = resumeText.match(/(linkedin\.com\/[^\s\)]+)/i);
+    const websiteMatches = resumeText.match(/(https?:\/\/[^\s\)]+)/i);
+
+    const extractedLinks = [];
+    if (githubMatches) extractedLinks.push(githubMatches[0]);
+    if (linkedinMatches) extractedLinks.push(linkedinMatches[0]);
+    if (websiteMatches && !githubMatches && !linkedinMatches) extractedLinks.push(websiteMatches[0]);
+
+    const extractedSkills = [];
+    const skillList = ['React', 'Node.js', 'Python', 'JavaScript', 'TypeScript', 'Java', 'C++', 'SQL', 'MongoDB', 'AWS', 'Docker', 'Figma', 'HTML', 'CSS', 'Git', 'Pandas', 'Tailwind', 'Express', 'SEO', 'Excel'];
+    skillList.forEach(sk => {
+        if (new RegExp('\\b' + sk + '\\b', 'i').test(resumeText)) {
+            extractedSkills.push(sk);
+        }
+    });
+
+    const actionVerbMatches = resumeText.match(/\b(Led|Built|Designed|Developed|Created|Architected|Engineered|Managed|Scaled|Spearheaded|Implemented|Optimized)\b/gi) || [];
+
+    let contactScore = extractedLinks.length > 0 ? 85 : 55;
+    let skillsScore = Math.min(95, Math.max(35, extractedSkills.length * 12));
+    let projectsScore = extractedLinks.length > 0 ? (extractedSkills.length > 3 ? 82 : 65) : 40;
+    let experienceScore = Math.min(90, Math.max(30, (numberCount * 8) + (actionVerbMatches.length * 5)));
+    let achievementsScore = Math.min(90, Math.max(35, numberCount * 7));
+    let languageScore = Math.max(30, 90 - (buzzwordMatches.length * 15));
+    let formattingScore = Math.min(92, Math.max(45, Math.floor(wordCount / 4.2)));
+    let careerNarrativeScore = wordCount > 250 ? 78 : 52;
 
     let baselineScore = Math.round((skillsScore * 0.4) + (projectsScore * 0.6));
     let gatingFlags = [];
@@ -131,65 +152,99 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
     if (baselineScore < 50) {
         achievementsScore = 30;
         gatingFlags.push("achievement_without_foundation");
-        overallScore = Math.min(baselineScore + 10, 52);
+        overallScore = Math.min(baselineScore + 8, 52);
     } else {
-        let weightedSum = (contactScore * 0.05) + (skillsScore * 0.15) + (projectsScore * 0.25) + (experienceScore * 0.25) + (achievementsScore * 0.10) + (languageScore * 0.10) + (formattingScore * 0.10);
+        let weightedSum = (contactScore * 0.08) + (skillsScore * 0.18) + (projectsScore * 0.22) + (experienceScore * 0.22) + (achievementsScore * 0.10) + (languageScore * 0.10) + (formattingScore * 0.10);
         overallScore = Math.round(weightedSum);
     }
 
     let detectedField = "Tech";
     let detectedRole = "Software Engineer";
 
-    if (/(data scientist|machine learning|python|pandas|ai|deep learning)/i.test(resumeText)) {
+    if (/(data scientist|machine learning|python|pandas|numpy|ai|deep learning)/i.test(resumeText)) {
         detectedField = "Tech";
         detectedRole = "Data Scientist";
-    } else if (/(react|node|full stack|web developer|frontend|backend|javascript|developer|engineer|software|code)/i.test(resumeText)) {
+    } else if (/(react|node|full stack|web developer|frontend|backend|javascript|typescript|software engineer|developer)/i.test(resumeText)) {
         detectedField = "Tech";
-        detectedRole = "Software Engineer";
+        detectedRole = "Full Stack Web Developer";
     } else if (/(marketing|seo|campaign|sales|revenue|quota|conversion)/i.test(resumeText)) {
         detectedField = "Marketing/Sales";
-        detectedRole = "Marketing Specialist";
-    } else if (/(accounting|finance|audit|financial|budget|tax)/i.test(resumeText)) {
+        detectedRole = "Growth Marketing Specialist";
+    } else if (/(accounting|finance|audit|financial|budget|tax|excel)/i.test(resumeText)) {
         detectedField = "Finance";
         detectedRole = "Financial Analyst";
-    } else if (/(design|figma|ui|ux|adobe|photoshop)/i.test(resumeText)) {
+    } else if (/(design|figma|ui|ux|adobe|photoshop|wireframe)/i.test(resumeText)) {
         detectedField = "Design";
         detectedRole = "UI/UX Designer";
-    } else {
-        detectedField = "General Professional";
-        detectedRole = "Professional Candidate";
     }
 
-    let expLevel = wordCount > 400 ? "3–8 yrs" : (wordCount > 200 ? "0–3 yrs" : "Student/Fresher");
+    let expLevel = wordCount > 450 ? "3–8 yrs" : (wordCount > 220 ? "0–3 yrs" : "Student/Fresher");
+
+    const candidateName = lines.length > 0 && lines[0].length < 35 ? lines[0] : "Candidate";
 
     let headline = isSavage
-        ? (hasBuzzwords ? "A buzzword salad with no numbers to back it up!" : "Decent shell, but where is the proof of ownership?")
-        : (isPolish ? "Strong core history ready for leadership metric alignment." : "Solid baseline structure requiring quantifiable outcomes.");
+        ? (numberCount === 0 ? `"${candidateName}'s resume has zero hard metrics to back up their claims!"` : `"${candidateName} lists skills, but needs deeper project evidence."`)
+        : (isPolish ? `"${candidateName}'s profile is well-structured for ${detectedRole} positioning."` : `"${candidateName}'s resume provides a solid foundation with clear technical skills."`);
 
     let verdict = isSavage
-        ? `Verdict: Resume evaluated for target role as ${detectedRole}. Needs metrics over responsibilities.`
-        : `Verdict: Target role identified as ${detectedRole}. Quantify key metrics to double callback rates.`;
+        ? `Verdict: Resume evaluated for ${detectedRole}. ${numberCount === 0 ? 'Lacks measurable impact data.' : 'Needs stronger action verbs and live project links.'}`
+        : `Verdict: Target role identified as ${detectedRole}. Enhance metric density to maximize callback rates.`;
 
-    let sampleQuote = resumeText.slice(0, 60);
+    const sampleQuotes = [];
+    lines.forEach(l => {
+        if (l.length > 25 && l.length < 100 && !l.includes('http') && sampleQuotes.length < 3) {
+            sampleQuotes.push(l);
+        }
+    });
+
+    if (sampleQuotes.length === 0) sampleQuotes.push(resumeText.slice(0, 70));
+
+    const generatedRoasts = sampleQuotes.map((q, idx) => {
+        if (idx === 0) {
+            return {
+                quote: q,
+                roast: isSavage ? `Describes tasks rather than actual results achieved.` : `Focuses on responsibilities instead of measurable outcomes.`,
+                fix: `Quantify impact (e.g. 'Delivered feature boosting efficiency by 25%').`
+            };
+        } else if (idx === 1) {
+            return {
+                quote: q,
+                roast: isSavage ? `Generic phrasing that fails to show your technical ownership.` : `Could use stronger technical action verbs.`,
+                fix: `Replace vague verbs with power verbs like 'Architected', 'Spearheaded', or 'Engineered'.`
+            };
+        } else {
+            return {
+                quote: q,
+                roast: isSavage ? `Missing verified live link or metrics to validate this claim.` : `Add proof link or metrics to validate this item.`,
+                fix: `Include a GitHub repository URL or live project demo link.`
+            };
+        }
+    });
+
+    const strengths = [];
+    if (extractedSkills.length > 0) strengths.push(`Identifies technical skills: ${extractedSkills.slice(0, 4).join(', ')}`);
+    if (extractedLinks.length > 0) strengths.push(`Provides verified online links: ${extractedLinks[0]}`);
+    if (numberCount > 0) strengths.push(`Contains ${numberCount} quantifiable numbers/metrics`);
+    if (strengths.length < 2) strengths.push(`Appropriate document length for quick screening`);
+
+    const weaknesses = [];
+    if (numberCount === 0) weaknesses.push(`Lacks concrete quantifiable metrics (% growth, $ saved, users served)`);
+    if (extractedLinks.length === 0) weaknesses.push(`Missing GitHub / portfolio demo links to verify project claims`);
+    if (buzzwordMatches.length > 0) weaknesses.push(`Contains buzzwords (${buzzwordMatches.slice(0, 2).join(', ')}) instead of direct proof`);
+    if (weaknesses.length < 2) weaknesses.push(`Bullet points describe duties rather than measurable accomplishments`);
 
     let boosters = [];
     if (detectedField === "Tech") {
         boosters = [
-            "🏆 **Hackathon & Competition Win**: Win or place top-3 in a hackathon (e.g. ETHIndia, Devpost) to showcase real-world execution under tight deadlines.",
-            "🚀 **Live Deployed Product Demos**: Deploy your top projects live to Vercel/Render with public URLs so recruiters can test your apps instantly.",
-            "📜 **Recognized Cloud Certifications**: Earning an AWS Certified Developer or Meta Frontend Certificate adds recognized industry credibility."
-        ];
-    } else if (detectedField === "Marketing/Sales") {
-        boosters = [
-            "📈 **Campaign ROI Case Studies**: Build a 1-page portfolio showcasing total ad spend vs revenue generated or user lead growth %.",
-            "📜 **Google / Meta Analytics Certifications**: Complete Google Analytics 4 (GA4) or Meta Certified Digital Marketing Associate certs.",
-            "🏆 **Sales Award / Quota Overachievement**: Highlight ranking top 5% among sales reps or achieving 125%+ of quarterly quota."
+            "🏆 **Hackathon Win / Award**: Winning or competing in a hackathon (e.g. Devpost, ETHIndia) proves real-world pressure testing.",
+            "🚀 **Live Deployed Product Demos**: Add working Vercel/Render links for your top projects so recruiters can test your apps.",
+            "📜 **Cloud Certifications**: Earning an AWS Certified Developer or Meta Certificate adds recognized industry validation."
         ];
     } else {
         boosters = [
-            "🏆 **Industry Competition / Recognition**: Participate in domain competitions or publish case study articles on Medium/LinkedIn.",
-            "📜 **Specialized Professional Certifications**: Earn specialized certifications relevant to your field to validate core technical mastery.",
-            "🚀 **Public Portfolio / Case Study Hub**: Publish a personal portfolio website or Notion hub showcasing verified project deliverables."
+            "🏆 **Domain Competition / Recognition**: Participate in industry case study challenges to demonstrate expertise.",
+            "📜 **Recognized Professional Certifications**: Earn recognized certs in your field to validate your skills.",
+            "🚀 **Public Portfolio Hub**: Publish a personal portfolio website or Notion hub showcasing verified project deliverables."
         ];
     }
 
@@ -216,28 +271,16 @@ function generateSimulatedRoast(resumeText, mode, wordCount) {
             brevity: formattingScore,
             buzzwords: languageScore
         },
-        strengths: [
-            hasLinks ? "Includes verified online profile/portfolio links" : "Clean overall text structure",
-            hasNumbers ? "References quantitative metrics" : "Good technical terms present"
-        ],
-        weaknesses: [
-            !hasNumbers ? "Lacks concrete quantifiable outcomes (% / $ / scale)" : "Could expand on project ownership details",
-            hasBuzzwords ? "Contains overused buzzwords that reduce credibility" : "Missing deployed project demo links"
-        ],
-        roasts: [
-            {
-                quote: sampleQuote || "Resume summary section",
-                roast: isSavage ? "Claims high impact, but lacks a single dollar sign or percentage metric." : "Responsibilities listed without clear impact outcomes.",
-                fix: "Add specific metrics (e.g. 'Increased speed by 35% across 50k users')."
-            }
-        ],
+        strengths,
+        weaknesses,
+        roasts: generatedRoasts,
         roast: isSavage
-            ? `Let's be real: this resume for ${detectedRole} has ${wordCount} words, but finding a single hard metric feels like searching for a needle in a haystack. ${hasBuzzwords ? 'Using buzzwords won\'t bypass recruiter filter screens.' : ''}`
-            : `Your background for ${detectedRole} shows promise, but bullet points focus on duties rather than measurable results. Quantify your scale to stand out.`,
+            ? `Analyzing ${candidateName}'s resume for ${detectedRole}: Out of ${wordCount} words, we found ${extractedSkills.length} key skills (${extractedSkills.slice(0, 3).join(', ') || 'general'}) and ${numberCount} metrics. ${numberCount === 0 ? 'Without hard numbers, your bullet points sound like a job description list rather than a proof of achievements.' : 'To jump into top candidate tiers, add live demo links and lead with stronger action verbs.'}`
+            : `Your background as ${detectedRole} shows good foundational skills in ${extractedSkills.slice(0, 3).join(', ') || 'your field'}. Focus on quantifying your outcomes to significantly increase callback rates.`,
         topFixes: [
-            "Quantify every major accomplishment with numbers (% growth, revenue, users).",
-            "Replace generic self-praise with direct technical proof.",
-            "Add GitHub or live demo links for your top projects."
+            numberCount === 0 ? "Add specific numbers (% growth, users, scale) to every bullet point." : "Lead bullet points with high-impact action verbs (Engineered, Scaled).",
+            extractedLinks.length === 0 ? "Add GitHub or live demo links for your top 2 projects." : "Expand on project architecture and individual contribution.",
+            "Eliminate generic self-praise and replace with direct proof of work."
         ],
         resumeBoosters: boosters,
         isSimulated: true
@@ -279,7 +322,9 @@ ${resumeText.slice(0, 4000)}
         return parsedContent;
     } catch (err) {
         console.error('OpenAI API call failed, using fallback engine:', err.message);
-        return generateSimulatedRoast(resumeText, mode, wordCount);
+        const fallbackResult = generateSimulatedRoast(resumeText, mode, wordCount);
+        fallbackResult.apiError = err.message;
+        return fallbackResult;
     }
 }
 
