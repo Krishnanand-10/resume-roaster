@@ -15,6 +15,9 @@ const loadingContainer = document.getElementById('loadingContainer');
 const loadingStatusText = document.getElementById('loadingStatusText');
 const resultContainer = document.getElementById('resultContainer');
 const simulatedBanner = document.getElementById('simulatedBanner');
+const gatingBanner = document.getElementById('gatingBanner');
+const classificationBar = document.getElementById('classificationBar');
+const verdictBanner = document.getElementById('verdictBanner');
 const overallScoreBadge = document.getElementById('overallScoreBadge');
 const modeTag = document.getElementById('modeTag');
 const roastHeadline = document.getElementById('roastHeadline');
@@ -30,6 +33,7 @@ const barBrevity = document.getElementById('barBrevity');
 const scoreBuzzwords = document.getElementById('scoreBuzzwords');
 const barBuzzwords = document.getElementById('barBuzzwords');
 
+const quotedRoastsContainer = document.getElementById('quotedRoastsContainer');
 const strengthsList = document.getElementById('strengthsList');
 const weaknessesList = document.getElementById('weaknessesList');
 const roastNarrative = document.getElementById('roastNarrative');
@@ -95,7 +99,7 @@ copyRoastBtn.addEventListener('click', () => {
 Mode: ${modeTag.textContent}
 Overall Score: ${overallScoreBadge.textContent}/100
 Headline: ${roastHeadline.textContent}
-
+${verdictBanner.textContent ? '\n' + verdictBanner.textContent + '\n' : ''}
 Critique:
 ${roastNarrative.textContent}`;
 
@@ -162,11 +166,11 @@ roastForm.addEventListener('submit', async (e) => {
 function startLoadingAnimation() {
     loadingContainer.style.display = 'block';
     const statusMessages = [
-        'Parsing document text streams...',
-        'Filtering out buzzwords and fluff...',
-        'Firing up the AI critique engine...',
-        'Calculating impact and formatting scores...',
-        'Finalizing your brutal evaluation...'
+        'Extracting target role & field from resume...',
+        'Checking Tier-1 baseline project gates...',
+        'Auditing metric density & action verbs...',
+        'Pairing quoted roasts with constructive fixes...',
+        'Finalizing your instruction rubric evaluation...'
     ];
     let msgIdx = 0;
     loadingStatusText.textContent = statusMessages[0];
@@ -186,28 +190,61 @@ function renderAnalysisResults(data) {
 
     simulatedBanner.style.display = analysis.isSimulated ? 'block' : 'none';
 
+    if (analysis.gatingFlags && analysis.gatingFlags.length > 0) {
+        gatingBanner.style.display = 'block';
+    } else {
+        gatingBanner.style.display = 'none';
+    }
+
+    const cls = analysis.classification || {};
+    classificationBar.innerHTML = `
+        <span class="class-tag">🎯 Field: ${escapeHtml(cls.field || 'General')}</span>
+        <span class="class-tag">💼 Target Role: ${escapeHtml(cls.targetRole || 'Detected Role')}</span>
+        <span class="class-tag">📈 Level: ${escapeHtml(cls.experienceLevel || '0-3 yrs')}</span>
+    `;
+
+    if (analysis.verdict) {
+        verdictBanner.textContent = analysis.verdict;
+        verdictBanner.style.display = 'block';
+    } else {
+        verdictBanner.style.display = 'none';
+    }
+
     statWords.textContent = data.wordCount;
     statChars.textContent = data.characterCount;
     modeTag.textContent = MODE_NAMES[data.roastMode] || '🔥 Savage Roast';
-    roastHeadline.textContent = `"${analysis.headline}"`;
+    roastHeadline.textContent = `"${analysis.headline || ''}"`;
 
-    const score = Math.round(analysis.overallScore);
+    const score = Math.round(analysis.overallScore || 0);
     overallScoreBadge.textContent = score;
     overallScoreBadge.className = 'score-circle ' + (score >= 75 ? 'score-green' : (score >= 50 ? 'score-yellow' : 'score-red'));
 
     const cats = analysis.categories || {};
-    setCategoryBar('Impact', cats.impact || 0);
+    setCategoryBar('Impact', cats.impact || cats.experience || 0);
     setCategoryBar('Formatting', cats.formatting || 0);
-    setCategoryBar('Brevity', cats.brevity || 0);
-    setCategoryBar('Buzzwords', cats.buzzwords || 0);
+    setCategoryBar('Brevity', cats.brevity || cats.formatting || 0);
+    setCategoryBar('Buzzwords', cats.buzzwords || cats.language || 0);
+
+    if (analysis.roasts && analysis.roasts.length > 0) {
+        quotedRoastsContainer.innerHTML = '<h4>🔥 Quoted Line Critique & Fixes</h4>' + analysis.roasts.map(r => `
+            <div class="quoted-roast-card">
+                <div class="quote-block">"${escapeHtml(r.quote || '')}"</div>
+                <div class="roast-block">🔥 ${escapeHtml(r.roast || '')}</div>
+                <div class="fix-block">💡 <strong>Fix:</strong> ${escapeHtml(r.fix || '')}</div>
+            </div>
+        `).join('');
+        quotedRoastsContainer.style.display = 'block';
+    } else {
+        quotedRoastsContainer.style.display = 'none';
+    }
 
     strengthsList.innerHTML = (analysis.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
-
     weaknessesList.innerHTML = (analysis.weaknesses || []).map(w => `<li>${escapeHtml(w)}</li>`).join('');
 
     roastNarrative.textContent = analysis.roast || '';
 
-    actionTipsList.innerHTML = (analysis.actionableTips || []).map(t => `<li>${escapeHtml(t)}</li>`).join('');
+    const tips = analysis.topFixes || analysis.actionableTips || [];
+    actionTipsList.innerHTML = tips.map(t => `<li>${escapeHtml(t)}</li>`).join('');
 
     previewBox.textContent = data.extractedText;
 
@@ -233,5 +270,3 @@ function escapeHtml(str) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
     });
 }
-
-

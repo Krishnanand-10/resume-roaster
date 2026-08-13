@@ -30,10 +30,10 @@ async function extractPdfText(buffer) {
 
 const RUBRIC_SYSTEM_PROMPT = `You are the Resume Roaster AI Engine evaluating candidate resumes against an elite multi-step Instruction Rubric.
 
---- STEP 0: CLASSIFICATION ---
+--- STEP 0: CLASSIFICATION & TARGET ROLE EXTRACTION ---
 1. Field: Detect one of [Tech, Marketing, Sales, Finance, Design, HR, Operations, Education, Other].
-2. Experience Level: Detect one of [Student/Fresher, 0–3 yrs, 3–8 yrs, 8+ yrs].
-3. Has JD: Set true if a Target Job Description is provided, else false.
+2. Target Role: Automatically extract the primary target job title/role directly from the candidate's resume text (e.g. Full Stack Engineer, Growth Marketer, Data Analyst, UI Designer).
+3. Experience Level: Detect one of [Student/Fresher, 0–3 yrs, 3–8 yrs, 8+ yrs].
 
 --- STEP 1 & 2: SECTION EVALUATION & FIELD PROOF-OF-WORK ---
 Evaluate scores (0-100) for sections:
@@ -45,7 +45,6 @@ Evaluate scores (0-100) for sections:
 - language: Grammar, passive voice, zero buzzwords (synergy, results-driven, go-getter), objective fluff.
 - formatting: ATS readability, 1-2 page length appropriateness, structure.
 - careerNarrative: Career progression logic, unexplained gaps.
-- jdMatch: Skill overlap % if JD provided, else 100.
 
 Apply Field Proof-of-Work Matrix:
 - Tech: Deployed links, GitHub, deep stack details beyond basic tutorials.
@@ -72,8 +71,8 @@ You must respond strictly in JSON matching this schema:
 {
   "classification": {
     "field": "<Tech/Marketing/Sales/Finance/Design/HR/Operations/Education/Other>",
-    "experienceLevel": "<Student/Fresher / 0–3 yrs / 3–8 yrs / 8+ yrs>",
-    "hasJd": false
+    "targetRole": "<Extracted Target Role from Resume>",
+    "experienceLevel": "<Student/Fresher / 0–3 yrs / 3–8 yrs / 8+ yrs>"
   },
   "overallScore": <number 0-100>,
   "headline": "<punchy summary quote>",
@@ -87,8 +86,7 @@ You must respond strictly in JSON matching this schema:
     "achievements": <number 0-100>,
     "language": <number 0-100>,
     "formatting": <number 0-100>,
-    "careerNarrative": <number 0-100>,
-    "jdMatch": <number 0-100>
+    "careerNarrative": <number 0-100>
   },
   "strengths": ["<strength 1>", "<strength 2>"],
   "weaknesses": ["<weakness 1>", "<weakness 2>"],
@@ -103,7 +101,7 @@ You must respond strictly in JSON matching this schema:
   "topFixes": ["<priority fix 1>", "<priority fix 2>", "<priority fix 3>"]
 }`;
 
-function generateSimulatedRoast(resumeText, mode, wordCount, jobDescription = '') {
+function generateSimulatedRoast(resumeText, mode, wordCount) {
     const isSavage = mode === 'savage';
     const isPolish = mode === 'polish';
 
@@ -120,13 +118,6 @@ function generateSimulatedRoast(resumeText, mode, wordCount, jobDescription = ''
     let formattingScore = Math.min(88, Math.max(50, Math.floor(wordCount / 4.5)));
     let careerNarrativeScore = wordCount > 150 ? 75 : 50;
 
-    let jdMatchScore = 100;
-    if (jobDescription && jobDescription.trim().length > 0) {
-        const jdWords = jobDescription.toLowerCase().split(/\W+/).filter(w => w.length > 3);
-        const matchCount = jdWords.filter(w => resumeText.toLowerCase().includes(w)).length;
-        jdMatchScore = jdWords.length > 0 ? Math.min(95, Math.max(30, Math.round((matchCount / jdWords.length) * 100))) : 80;
-    }
-
     let baselineScore = Math.round((skillsScore * 0.4) + (projectsScore * 0.6));
     let gatingFlags = [];
     let overallScore = 0;
@@ -141,12 +132,23 @@ function generateSimulatedRoast(resumeText, mode, wordCount, jobDescription = ''
     }
 
     let detectedField = "Tech";
-    if (/(marketing|seo|campaign|sales|revenue|quota|conversion)/i.test(resumeText)) {
+    let detectedRole = "Software Developer";
+
+    if (/(react|node|full stack|web developer|frontend|backend)/i.test(resumeText)) {
+        detectedField = "Tech";
+        detectedRole = "Full Stack Web Developer";
+    } else if (/(data scientist|machine learning|python|pandas|ai)/i.test(resumeText)) {
+        detectedField = "Tech";
+        detectedRole = "Data Scientist / AI Engineer";
+    } else if (/(marketing|seo|campaign|sales|revenue|quota|conversion)/i.test(resumeText)) {
         detectedField = "Marketing/Sales";
+        detectedRole = "Growth Marketing Specialist";
     } else if (/(accounting|finance|audit|financial|budget|tax)/i.test(resumeText)) {
         detectedField = "Finance";
+        detectedRole = "Financial Analyst";
     } else if (/(design|figma|ui|ux|adobe|photoshop)/i.test(resumeText)) {
         detectedField = "Design";
+        detectedRole = "UI/UX Designer";
     }
 
     let expLevel = wordCount > 400 ? "3–8 yrs" : (wordCount > 200 ? "0–3 yrs" : "Student/Fresher");
@@ -156,16 +158,16 @@ function generateSimulatedRoast(resumeText, mode, wordCount, jobDescription = ''
         : (isPolish ? "Strong core history ready for leadership metric alignment." : "Solid baseline structure requiring quantifiable outcomes.");
 
     let verdict = isSavage
-        ? "Verdict: Your resume looks like a wishlist of duties rather than a record of accomplishments."
-        : "Verdict: Enhance quantifiable metrics to double your interview callback rate.";
+        ? `Verdict: Resume evaluated for target role as ${detectedRole}. Needs metrics over responsibilities.`
+        : `Verdict: Target role identified as ${detectedRole}. Quantify key metrics to double callback rates.`;
 
     let sampleQuote = resumeText.slice(0, 60);
 
     return {
         classification: {
             field: detectedField,
-            experienceLevel: expLevel,
-            hasJd: Boolean(jobDescription && jobDescription.trim())
+            targetRole: detectedRole,
+            experienceLevel: expLevel
         },
         overallScore,
         headline,
@@ -180,7 +182,6 @@ function generateSimulatedRoast(resumeText, mode, wordCount, jobDescription = ''
             language: languageScore,
             formatting: formattingScore,
             careerNarrative: careerNarrativeScore,
-            jdMatch: jdMatchScore,
             impact: experienceScore,
             brevity: formattingScore,
             buzzwords: languageScore
@@ -201,8 +202,8 @@ function generateSimulatedRoast(resumeText, mode, wordCount, jobDescription = ''
             }
         ],
         roast: isSavage
-            ? `Let's be real: this resume has ${wordCount} words, but finding a single hard metric feels like searching for a needle in a haystack. ${hasBuzzwords ? 'Using buzzwords won\'t bypass recruiter filter screens.' : ''}`
-            : `Your background shows promise, but bullet points focus on duties rather than measurable results. Quantify your scale to stand out.`,
+            ? `Let's be real: this resume for ${detectedRole} has ${wordCount} words, but finding a single hard metric feels like searching for a needle in a haystack. ${hasBuzzwords ? 'Using buzzwords won\'t bypass recruiter filter screens.' : ''}`
+            : `Your background for ${detectedRole} shows promise, but bullet points focus on duties rather than measurable results. Quantify your scale to stand out.`,
         topFixes: [
             "Quantify every major accomplishment with numbers (% growth, revenue, users).",
             "Replace generic self-praise with direct technical proof.",
@@ -212,21 +213,17 @@ function generateSimulatedRoast(resumeText, mode, wordCount, jobDescription = ''
     };
 }
 
-async function generateAiRoast(resumeText, mode, wordCount, jobDescription = '') {
+async function generateAiRoast(resumeText, mode, wordCount) {
     if (!openai) {
-        return generateSimulatedRoast(resumeText, mode, wordCount, jobDescription);
+        return generateSimulatedRoast(resumeText, mode, wordCount);
     }
 
     try {
-        let userPrompt = `Analyze and evaluate the following resume text (${wordCount} words) in ${mode.toUpperCase()} mode:
+        const userPrompt = `Analyze and evaluate the following resume text (${wordCount} words) in ${mode.toUpperCase()} mode:
 
 --- RESUME TEXT START ---
 ${resumeText.slice(0, 4000)}
 --- RESUME TEXT END ---`;
-
-        if (jobDescription && jobDescription.trim()) {
-            userPrompt += `\n\n--- TARGET JOB DESCRIPTION START ---\n${jobDescription.slice(0, 2000)}\n--- TARGET JOB DESCRIPTION END ---`;
-        }
 
         const response = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
@@ -251,7 +248,7 @@ ${resumeText.slice(0, 4000)}
         return parsedContent;
     } catch (err) {
         console.error('OpenAI API call failed, using fallback engine:', err.message);
-        return generateSimulatedRoast(resumeText, mode, wordCount, jobDescription);
+        return generateSimulatedRoast(resumeText, mode, wordCount);
     }
 }
 
@@ -259,7 +256,6 @@ app.post('/roast', async (req, res) => {
     try {
         let extractedText = '';
         const roastMode = (req.body && req.body.roastMode) || 'savage';
-        const jobDescription = (req.body && (req.body.jobDescription || req.body.jd)) || '';
 
         if (req.files && req.files.resume) {
             const file = req.files.resume;
@@ -287,7 +283,7 @@ app.post('/roast', async (req, res) => {
         const wordCount = extractedText.split(/\s+/).filter(Boolean).length;
         const characterCount = extractedText.length;
 
-        const aiAnalysis = await generateAiRoast(extractedText, roastMode, wordCount, jobDescription);
+        const aiAnalysis = await generateAiRoast(extractedText, roastMode, wordCount);
 
         res.json({
             success: true,

@@ -31,9 +31,9 @@
 - [x] **Phase 3: AI Engine & Prompt Engineering**
   - Configurable Roast Modes (Savage Roast, Recruiter Critique, Executive Polish)
   - Scoring engine (Impact, Formatting, Buzzwords, Overused Clichés)
-- [ ] **Phase 4: Dynamic Visualization & UX Polish**
-  - Animated score breakdown gauges
-  - One-click copy improvements & export functionality
+- [x] **Phase 4: Advanced Rubric & UX Polish**
+  - 5-Step Classification, Tier-1 Gated Baseline Scoring, and Quoted Roasts with Paired Fixes
+  - Target Job Description (JD) keyword matching & One-click report copy
 
 ---
 

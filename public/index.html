@@ -60,6 +60,12 @@
                 ℹ️ Running in <strong>Simulated AI Mode</strong> (Add <code>OPENAI_API_KEY</code> to <code>.env</code> to connect live GPT model).
             </div>
 
+            <div class="gating-banner" id="gatingBanner" style="display: none;">
+                ⚠️ <strong>Tier-1 Gating Warning</strong>: Project & Skill baseline score was below threshold. Achievements bonus was capped to prevent inflated scoring without solid evidence.
+            </div>
+
+            <div class="classification-bar" id="classificationBar"></div>
+
             <div class="score-header-card">
                 <div class="score-circle-wrap">
                     <div class="score-circle" id="overallScoreBadge">0</div>
@@ -74,6 +80,8 @@
                     </div>
                 </div>
             </div>
+
+            <div class="verdict-banner" id="verdictBanner"></div>
 
             <div class="categories-grid">
                 <div class="category-card">
@@ -113,6 +121,8 @@
                     </div>
                 </div>
             </div>
+
+            <div class="quoted-roasts-container" id="quotedRoastsContainer"></div>
 
             <div class="feedback-grid">
                 <div class="feedback-card strengths-card">
