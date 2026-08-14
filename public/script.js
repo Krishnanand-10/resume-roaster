@@ -14,7 +14,6 @@ const loadingContainer = document.getElementById('loadingContainer');
 const loadingStatusText = document.getElementById('loadingStatusText');
 const resultContainer = document.getElementById('resultContainer');
 const simulatedBanner = document.getElementById('simulatedBanner');
-const gatingBanner = document.getElementById('gatingBanner');
 const classificationBar = document.getElementById('classificationBar');
 const verdictBanner = document.getElementById('verdictBanner');
 const overallScoreBadge = document.getElementById('overallScoreBadge');
@@ -166,17 +165,11 @@ function renderAnalysisResults(data) {
     const analysis = data.analysis;
 
     if (analysis.isSimulated) {
-        simulatedBanner.innerHTML = 'ℹ️ Running in <strong>Simulated AI Mode</strong>. (Tip: Get a 100% FREE Gemini API key at <a href="https://aistudio.google.com" target="_blank" style="color: #60a5fa; text-decoration: underline;">aistudio.google.com</a> and add <code>GEMINI_API_KEY</code> to <code>.env</code> for live AI).';
+        simulatedBanner.innerHTML = 'ℹ️ Running in <strong>Simulated AI Mode</strong>. (Add <code>GEMINI_API_KEY</code> to <code>.env</code> for live AI).';
         simulatedBanner.style.display = 'block';
     } else {
-        simulatedBanner.innerHTML = `✨ Powered by <strong>Live AI (${escapeHtml(analysis.aiProvider || 'LLM')})</strong>.`;
+        simulatedBanner.innerHTML = '✨ Powered by <strong>Live AI</strong>';
         simulatedBanner.style.display = 'block';
-    }
-
-    if (analysis.gatingFlags && analysis.gatingFlags.length > 0) {
-        gatingBanner.style.display = 'block';
-    } else {
-        gatingBanner.style.display = 'none';
     }
 
     const cls = analysis.classification || {};
