@@ -5,14 +5,22 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/*.test.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Krishnanand-10/resume-roaster.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "resume-roaster",
+    "ai-resume-analyzer",
+    "gemini",
+    "openai",
+    "anthropic",
+    "express",
+    "pdf-parse"
+  ],
+  "author": "Krishnanand",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
@@ -20,9 +28,11 @@
   },
   "homepage": "https://github.com/Krishnanand-10/resume-roaster#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-fileupload": "^1.5.2",
+    "express-rate-limit": "^8.6.2",
     "openai": "^7.4.0",
     "pdf-parse": "^2.4.5"
   }

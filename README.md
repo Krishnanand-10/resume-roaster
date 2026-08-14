@@ -13,8 +13,9 @@
 ## 🛠️ Tech Stack
 
 - **Frontend**: Modern HTML5, CSS3 (Custom Glassmorphism Design System & Micro-animations), and Vanilla JavaScript
-- **Backend**: Node.js & Express.js
-- **AI Integration**: Anthropic API (Claude 3.5 Sonnet) / OpenAI API (GPT-4o)
+- **Backend**: Node.js & Express.js with `express-rate-limit` for API abuse protection
+- **AI Providers & Fallback Engine**: Multi-Provider Cascade supporting **Google Gemini (3.5 Flash / Flash Lite)**, **OpenAI (GPT-4o / GPT-4o-mini)**, **Anthropic (Claude 3.5 Sonnet / Haiku)**, and an intelligent rule-based simulated fallback engine.
+- **Testing**: Built-in test runner with `node:test` covering units, heuristics, API validation, and rate limiting.
 - **File Parsing**: `pdf-parse` for parsing PDF documents and native text extraction for `.txt` / paste inputs
 
 ---
@@ -28,12 +29,13 @@
 - [x] **Phase 2: Resume File Parsing**
   - PDF document parsing using `pdf-parse`
   - Plain text file processing and manual paste option
-- [x] **Phase 3: AI Engine & Prompt Engineering**
-  - Configurable Roast Modes (Savage Roast, Recruiter Critique, Executive Polish)
-  - Scoring engine (Impact, Formatting, Buzzwords, Overused Clichés)
-- [x] **Phase 4: Advanced Rubric & UX Polish**
-  - 5-Step Classification, Tier-1 Gated Baseline Scoring, and Quoted Roasts with Paired Fixes
-  - Target Job Description (JD) keyword matching & One-click report copy
+- [x] **Phase 3: Multi-Provider AI Engine & Fallback Orchestration**
+  - Multi-provider fallback cascade (Gemini ⇄ OpenAI ⇄ Anthropic ⇄ Simulated Fallback)
+  - Configurable Roast Modes (Savage Roast, Constructive Critique, Mild Teasing)
+  - Scoring engine (Impact, Formatting, Brevity, Buzzwords)
+- [x] **Phase 4: Safety, Rate Limiting & Automated Test Suite**
+  - IP Rate limiting on `/roast` using `express-rate-limit`
+  - Automated test suite with `npm test` (`node:test`)
 
 ---
 
@@ -50,25 +52,36 @@ npm install
 ```
 
 ### 3. Environment Variables
-Copy `.env.example` to `.env` and fill in your AI API key:
+Copy `.env.example` to `.env` and configure your API keys:
 ```bash
 cp .env.example .env
 ```
 
-`.env` setup:
+`.env` configuration options:
 ```env
 PORT=3000
+
+# Preferred provider: 'gemini', 'openai', 'anthropic', or 'auto'
+AI_PROVIDER=auto
+
+# Provide any or all of the API keys below (the engine auto-cascades):
+GEMINI_API_KEY=your_gemini_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
-# ANTHROPIC_API_KEY=your_anthropic_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# Max requests per 10 minutes per IP
+RATE_LIMIT_MAX=20
 ```
 
-### 4. Running Locally
+### 4. Running Tests
+```bash
+npm test
+```
+
+### 5. Running Locally
 ```bash
 # Start the Express server
 npm start
-
-# Or run with auto-reload (using nodemon if installed)
-npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.

@@ -165,10 +165,11 @@ function renderAnalysisResults(data) {
     const analysis = data.analysis;
 
     if (analysis.isSimulated) {
-        simulatedBanner.innerHTML = 'ℹ️ Running in <strong>Simulated AI Mode</strong>. (Add <code>GEMINI_API_KEY</code> to <code>.env</code> for live AI).';
+        simulatedBanner.innerHTML = `ℹ️ Running in <strong>Simulated AI Mode</strong>. (Add <code>GEMINI_API_KEY</code>, <code>OPENAI_API_KEY</code>, or <code>ANTHROPIC_API_KEY</code> in <code>.env</code> for live models).`;
         simulatedBanner.style.display = 'block';
     } else {
-        simulatedBanner.innerHTML = '✨ Powered by <strong>Live AI</strong>';
+        const providerName = escapeHtml(analysis.aiProvider || 'Live AI');
+        simulatedBanner.innerHTML = `✨ Powered by <strong>${providerName}</strong>`;
         simulatedBanner.style.display = 'block';
     }
 
