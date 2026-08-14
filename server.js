@@ -2,8 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const pdfModule = require('pdf-parse');
-const { OpenAI } = require('openai');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -11,9 +9,7 @@ app.use(express.static('public'));
 app.use(express.json());
 app.use(fileUpload());
 
-const openai = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here'
-    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-    : null;
+// ─── PDF TEXT EXTRACTION ──────────────────────────────────────────────────────
 
 async function extractPdfText(buffer) {
     try {
@@ -32,290 +28,209 @@ async function extractPdfText(buffer) {
     }
 }
 
-const RUBRIC_SYSTEM_PROMPT = `You are the Resume Roaster AI Engine evaluating candidate resumes. Provide a single, comprehensive analysis with clear breakdown:
+// ─── UNIVERSAL AI PROMPT ──────────────────────────────────────────────────────
 
---- STEP 0: CLASSIFICATION & TARGET ROLE EXTRACTION ---
-1. Field: Detect one of [Tech, Marketing, Sales, Finance, Design, HR, Operations, Education, Other].
-2. Target Role: Extract a crisp professional title (e.g. "Full Stack Developer", "Data Scientist", "Software Engineer", "Marketing Manager", "UI/UX Designer"). NEVER leave empty or generic.
-3. Experience Level: Detect one of [Student/Fresher, 0–3 yrs, 3–8 yrs, 8+ yrs].
+const RUBRIC_SYSTEM_PROMPT = `You are the scoring and roasting engine for "Resume Roaster." You will receive a resume's text and a roast mode (Mild / Medium / Savage). Follow these steps in strict order.
 
---- STEP 1 & 2: SECTION EVALUATION & PROOF-OF-WORK ---
-Evaluate scores (0-100) for:
-- contact: Email, phone, professional links (GitHub, portfolio, LinkedIn).
-- skills: Relevant technical tools, verified by evidence in projects/experience.
-- projects: Tier-1 Baseline Gate. Check 1-2 detailed projects, ownership links, non-clone depth.
-- experience: Quantified impact (% / $ / scale), strong action verbs (Led, Built, Scaled), metric density.
-- achievements: Tier-2 Bonus. Awards, hackathons, publications, certs.
-- language: Grammar, passive voice, zero buzzwords (synergy, results-driven, go-getter), objective fluff.
-- formatting: ATS readability, structure.
-- careerNarrative: Career progression logic.
+═══════════════════════════════
+STEP 1 — EXTRACT & CLASSIFY (From Document Only)
+═══════════════════════════════
+Analyze the resume document and extract:
+- field: Tech / Marketing / Sales / Finance / Design / HR / Operations / Education / Healthcare / Legal / Other
+- targetRole: The candidate's target job role/title (inferred directly from their headline, summary, work history, projects, and skills)
+- experience_level: Student-Fresher / 0-3yrs / 3-8yrs / 8+yrs
 
---- STEP 3: GATED SCORING LOGIC ---
-Calculate baseline_score = (skills * 0.4) + (projects * 0.6).
-If baseline_score < 50:
-- Flag: "achievement_without_foundation"
-- Cap overallScore at Math.min(baseline_score + 10, 55).
-Else:
-- Compute weighted overallScore across sections.
+═══════════════════════════════
+STEP 2 — EXTRACT SECTIONS (isolation required)
+═══════════════════════════════
+Parse the resume into a structured object with EACH section's raw text kept separate:
+{ contact, summary, skills, experience, projects, achievements, education, certifications }
 
---- STEP 4 & 5: THREE KEY OUTPUT SECTIONS ---
-1. WHAT IS GOOD: Highlight 2-3 genuine strengths of the resume.
-2. WHAT NEEDS IMPROVEMENT: Highlight 2-3 critical weaknesses with actionable fixes.
-3. THE ROAST: Provide a sharp, witty, brutally honest critique quoting exact resume lines paired with concrete fixes.
-4. PROFILE BOOSTERS: Provide 3 high-impact profile additions (e.g. Hackathons, Live Demos, Certifications).
+CRITICAL RULE: When scoring or quoting a section in Step 3/5, you may ONLY quote text that appears inside THAT section's own extracted text. Never pull a quote from a different section. If a section is empty/missing, mark it "not present" — do not borrow a quote from elsewhere to fill it.
 
-Respond strictly in JSON matching this schema:
+═══════════════════════════════
+STEP 3 — SCORE EACH SECTION (0-10, independently)
+═══════════════════════════════
+For each section, evaluate using ONLY that section's own text:
+
+- Summary: specific vs generic, leads with strongest asset or not
+- Skills: relevant/evidenced vs padded/buzzwordy
+- Experience: quantified impact vs vague duties, strong vs weak action verbs
+- Projects (TIER 1 — GATING SECTION):
+  - Has real detail (what was built/delivered, not just topic name)
+  - Has proof of ownership (link or concrete deliverable mentioned in text) — if none, note it explicitly, don't assume one exists
+  - Not a generic tutorial clone
+  - baseline_pass = true if projects_score + skills_score average >= 6/10, else false
+- Achievements (TIER 2 — GATED BONUS):
+  - Only apply achievements_bonus to overall score IF baseline_pass = true
+  - If baseline_pass = false: achievements_bonus = 0, add flag "achievement_without_foundation"
+  - Check consistency: does the achievement match claimed skills elsewhere? Flag if not.
+- Formatting/Language: grammar, passive voice, clichés, ATS-breaking elements, header/parsing glitches
+
+═══════════════════════════════
+STEP 4 — CALCULATE OVERALL SCORE (0-100)
+═══════════════════════════════
+overall = weighted_avg(
+  experience (high),
+  projects+skills baseline (high),
+  achievements_bonus (medium, ZERO if baseline_pass=false),
+  language/formatting (medium)
+)
+
+═══════════════════════════════
+STEP 5 — GENERATE ROASTS
+═══════════════════════════════
+Rules:
+1. Every roast must reference the section's own verbatim quote — never a generic insult with no evidence.
+2. Roast intensity follows the selected mode (Mild = constructive + light humor, Medium/Constructive = pointed & direct, Savage = brutal and razor-sharp, but still specific).
+3. Every roast line must be paired with one constructive fix.
+4. Priority roast targets, in order: achievements without baseline → unquantified claims → buzzword/objective filler → skill/achievement inconsistency → generic/unoriginal projects.
+5. Provide a "final verdict" headline and 2-sentence summary + top strengths and weaknesses.
+
+═══════════════════════════════
+STEP 6 — NO FABRICATION RULE (applies to all suggestions/fixes)
+═══════════════════════════════
+- NEVER invent specific numbers, tools, libraries, or metrics not present in the resume text (no fake %, no fake tool names unless the resume already states them).
+- When suggesting a fix that involves a metric, phrase it as a prompt for the user to fill in with their OWN true data: "Add a real number here — e.g., how much time this saved, if you tracked it."
+- Every fix suggestion that requests a new metric/detail must include the caveat: "Only include this if it's actually true."
+
+═══════════════════════════════
+OUTPUT FORMAT — STRICT JSON ONLY
+═══════════════════════════════
+Respond ONLY with a valid JSON object matching this structure (no markdown fences, no extra text):
 {
   "classification": {
-    "field": "<Tech/Marketing/Sales/Finance/Design/HR/Operations/Education/Other>",
-    "targetRole": "<Specific Target Job Role Title>",
-    "experienceLevel": "<Student/Fresher / 0–3 yrs / 3–8 yrs / 8+ yrs>"
+    "field": "<Tech | Marketing | Sales | Finance | Design | HR | Operations | Education | Healthcare | Legal | Other>",
+    "targetRole": "<Specific Target Job Role extracted/inferred from resume>",
+    "experienceLevel": "<Student-Fresher | 0-3yrs | 3-8yrs | 8+yrs>"
   },
-  "overallScore": <number 0-100>,
-  "headline": "<punchy summary quote>",
-  "verdict": "<one line final burn verdict>",
-  "gatingFlags": ["<flag string if any>"],
+  "overallScore": <integer 0-100 calculated per Step 4>,
+  "overallVerdict": "<2 sentences mentioning candidate by name if present, their actual strongest area and primary gap>",
+  "headline": "<1 punchy roast quote based strictly on real resume quotes>",
+  "verdict": "<short 1-line verdict string>",
+  "gatingFlags": ["<e.g. 'achievement_without_foundation' if applicable, else empty array>"],
   "categories": {
-    "contact": <number 0-100>,
-    "skills": <number 0-100>,
-    "projects": <number 0-100>,
-    "experience": <number 0-100>,
-    "achievements": <number 0-100>,
-    "language": <number 0-100>,
-    "formatting": <number 0-100>,
-    "careerNarrative": <number 0-100>
+    "impact": <integer 0-100 based on quantified achievements>,
+    "formatting": <integer 0-100 based on structure and ATS compatibility>,
+    "brevity": <integer 0-100 based on conciseness>,
+    "buzzwords": <integer 0-100, higher = fewer empty buzzwords>
   },
-  "strengths": ["<strength 1>", "<strength 2>"],
-  "weaknesses": ["<weakness 1>", "<weakness 2>"],
-  "roasts": [
-    {
-      "quote": "<exact string quote from resume>",
-      "roast": "<funny, sharp roast line>",
-      "fix": "<constructive actionable advice>"
-    }
+  "strengths": [
+    "<Strength 1 referencing real resume evidence>",
+    "<Strength 2>",
+    "<Strength 3>"
   ],
-  "roast": "<full narrative critique summary>",
-  "topFixes": ["<priority fix 1>", "<priority fix 2>", "<priority fix 3>"],
+  "weaknesses": [
+    "<Weakness 1 referencing real resume evidence with constructive fix>",
+    "<Weakness 2>",
+    "<Weakness 3>"
+  ],
   "resumeBoosters": [
-    "<High-impact profile booster suggestion 1>",
-    "<High-impact profile booster suggestion 2>",
-    "<High-impact profile booster suggestion 3>"
+    "<High-impact booster 1 adhering to the No-Fabrication rule with 'Only include this if it is actually true' caveat>",
+    "<High-impact booster 2>",
+    "<High-impact booster 3>"
   ]
 }`;
 
-function generateSimulatedRoast(resumeText, wordCount) {
-    const lines = resumeText.split('\n').map(l => l.trim()).filter(l => l.length > 5);
-    const numbersMatches = resumeText.match(/\d+%/g) || resumeText.match(/\d+/g) || [];
-    const numberCount = numbersMatches.length;
-    const hasBuzzwords = /(synergy|passionate|hardworking|thought leader|ninja|rockstar|go-getter|detail-oriented|results-driven|team player)/i.test(resumeText);
-    const buzzwordMatches = resumeText.match(/(synergy|passionate|hardworking|thought leader|ninja|rockstar|go-getter|detail-oriented|results-driven|team player)/gi) || [];
+// ─── GEMINI API CALL ──────────────────────────────────────────────────────────
 
-    const githubMatches = resumeText.match(/(github\.com\/[^\s\)]+)/i);
-    const linkedinMatches = resumeText.match(/(linkedin\.com\/[^\s\)]+)/i);
-    const websiteMatches = resumeText.match(/(https?:\/\/[^\s\)]+)/i);
-
-    const extractedLinks = [];
-    if (githubMatches) extractedLinks.push(githubMatches[0]);
-    if (linkedinMatches) extractedLinks.push(linkedinMatches[0]);
-    if (websiteMatches && !githubMatches && !linkedinMatches) extractedLinks.push(websiteMatches[0]);
-
-    const extractedSkills = [];
-    const skillList = ['React', 'Node.js', 'Python', 'JavaScript', 'TypeScript', 'Java', 'C++', 'SQL', 'MongoDB', 'AWS', 'Docker', 'Figma', 'HTML', 'CSS', 'Git', 'Pandas', 'Tailwind', 'Express', 'SEO', 'Excel'];
-    skillList.forEach(sk => {
-        if (new RegExp('\\b' + sk + '\\b', 'i').test(resumeText)) {
-            extractedSkills.push(sk);
-        }
-    });
-
-    const actionVerbMatches = resumeText.match(/\b(Led|Built|Designed|Developed|Created|Architected|Engineered|Managed|Scaled|Spearheaded|Implemented|Optimized)\b/gi) || [];
-
-    let contactScore = extractedLinks.length > 0 ? 85 : 55;
-    let skillsScore = Math.min(95, Math.max(35, extractedSkills.length * 12));
-    let projectsScore = extractedLinks.length > 0 ? (extractedSkills.length > 3 ? 82 : 65) : 40;
-    let experienceScore = Math.min(90, Math.max(30, (numberCount * 8) + (actionVerbMatches.length * 5)));
-    let achievementsScore = Math.min(90, Math.max(35, numberCount * 7));
-    let languageScore = Math.max(30, 90 - (buzzwordMatches.length * 15));
-    let formattingScore = Math.min(92, Math.max(45, Math.floor(wordCount / 4.2)));
-    let careerNarrativeScore = wordCount > 250 ? 78 : 52;
-
-    let baselineScore = Math.round((skillsScore * 0.4) + (projectsScore * 0.6));
-    let gatingFlags = [];
-    let overallScore = 0;
-
-    if (baselineScore < 50) {
-        achievementsScore = 30;
-        gatingFlags.push("achievement_without_foundation");
-        overallScore = Math.min(baselineScore + 8, 52);
-    } else {
-        let weightedSum = (contactScore * 0.08) + (skillsScore * 0.18) + (projectsScore * 0.22) + (experienceScore * 0.22) + (achievementsScore * 0.10) + (languageScore * 0.10) + (formattingScore * 0.10);
-        overallScore = Math.round(weightedSum);
+async function callGeminiApi(resumeText, roastMode) {
+    roastMode = roastMode || 'constructive';
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+        throw new Error('GEMINI_API_KEY is not configured. Add your free API key from https://aistudio.google.com to the .env file.');
     }
 
-    let detectedField = "Tech";
-    let detectedRole = "Software Engineer";
+    const candidateModels = [
+        'gemini-flash-lite-latest',
+        'gemini-3.5-flash-lite',
+        'gemini-3.1-flash-lite',
+        'gemini-3.1-flash-lite-preview',
+        'gemini-3.5-flash'
+    ];
+    const promptText = RUBRIC_SYSTEM_PROMPT + '\n\nREQUESTED ROAST TONE: "' + roastMode.toUpperCase() + '"\n\n--- RESUME TO EVALUATE ---\n' + resumeText.slice(0, 7000) + '\n--- END OF RESUME ---\n\nExtract the target role directly from the resume and follow Steps 1-6 strictly. Return ONLY the JSON object.';
 
-    if (/(data scientist|machine learning|python|pandas|numpy|ai|deep learning)/i.test(resumeText)) {
-        detectedField = "Tech";
-        detectedRole = "Data Scientist";
-    } else if (/(react|node|full stack|web developer|frontend|backend|javascript|typescript|software engineer|developer)/i.test(resumeText)) {
-        detectedField = "Tech";
-        detectedRole = "Full Stack Web Developer";
-    } else if (/(marketing|seo|campaign|sales|revenue|quota|conversion)/i.test(resumeText)) {
-        detectedField = "Marketing/Sales";
-        detectedRole = "Growth Marketing Specialist";
-    } else if (/(accounting|finance|audit|financial|budget|tax|excel)/i.test(resumeText)) {
-        detectedField = "Finance";
-        detectedRole = "Financial Analyst";
-    } else if (/(design|figma|ui|ux|adobe|photoshop|wireframe)/i.test(resumeText)) {
-        detectedField = "Design";
-        detectedRole = "UI/UX Designer";
-    }
-
-    let expLevel = wordCount > 450 ? "3–8 yrs" : (wordCount > 220 ? "0–3 yrs" : "Student/Fresher");
-
-    const candidateName = lines.length > 0 && lines[0].length < 35 ? lines[0] : "Candidate";
-
-    let headline = numberCount === 0
-        ? `"${candidateName}'s resume has zero hard metrics to back up their claims!"`
-        : `"${candidateName}'s resume lists skills, but needs deeper project metrics."`;
-
-    let verdict = `Verdict: Evaluated for ${detectedRole}. ${numberCount === 0 ? 'Needs measurable impact numbers over duties.' : 'Needs stronger action verbs and live project URLs.'}`;
-
-    const sampleQuotes = [];
-    lines.forEach(l => {
-        if (l.length > 25 && l.length < 100 && !l.includes('http') && sampleQuotes.length < 3) {
-            sampleQuotes.push(l);
+    const body = {
+        contents: [{ parts: [{ text: promptText }] }],
+        generationConfig: {
+            temperature: roastMode === 'savage' ? 0.9 : (roastMode === 'mild' ? 0.4 : 0.7),
+            maxOutputTokens: 8192
         }
-    });
-
-    if (sampleQuotes.length === 0) sampleQuotes.push(resumeText.slice(0, 70));
-
-    const generatedRoasts = sampleQuotes.map((q, idx) => {
-        if (idx === 0) {
-            return {
-                quote: q,
-                roast: `Describes daily duties rather than actual results achieved.`,
-                fix: `Quantify impact (e.g. 'Delivered feature boosting performance by 25%').`
-            };
-        } else if (idx === 1) {
-            return {
-                quote: q,
-                roast: `Generic phrasing that fails to show technical ownership.`,
-                fix: `Replace weak verbs with power verbs like 'Architected', 'Spearheaded', or 'Engineered'.`
-            };
-        } else {
-            return {
-                quote: q,
-                roast: `Missing verified live link or metrics to validate this claim.`,
-                fix: `Include a GitHub repository URL or live project demo link.`
-            };
-        }
-    });
-
-    const strengths = [];
-    if (extractedSkills.length > 0) strengths.push(`Identifies technical skills: ${extractedSkills.slice(0, 4).join(', ')}`);
-    if (extractedLinks.length > 0) strengths.push(`Provides verified online profile links: ${extractedLinks[0]}`);
-    if (numberCount > 0) strengths.push(`Contains ${numberCount} quantitative metrics`);
-    if (strengths.length < 2) strengths.push(`Clean document length suitable for ATS scanning`);
-
-    const weaknesses = [];
-    if (numberCount === 0) weaknesses.push(`Lacks concrete quantitative metrics (% growth, $ saved, scale)`);
-    if (extractedLinks.length === 0) weaknesses.push(`Missing GitHub / portfolio demo links to verify project claims`);
-    if (buzzwordMatches.length > 0) weaknesses.push(`Contains buzzwords (${buzzwordMatches.slice(0, 2).join(', ')}) instead of direct proof`);
-    if (weaknesses.length < 2) weaknesses.push(`Bullet points describe duties rather than measurable accomplishments`);
-
-    let boosters = [];
-    if (detectedField === "Tech") {
-        boosters = [
-            "🏆 **Hackathon Win / Competition**: Winning or competing in a hackathon (e.g. Devpost, ETHIndia) proves real-world execution under tight deadlines.",
-            "🚀 **Live Deployed Product Demos**: Add working Vercel/Render links for your top projects so recruiters can test your apps.",
-            "📜 **Cloud Certifications**: Earning an AWS Certified Developer or Meta Certificate adds recognized industry validation."
-        ];
-    } else {
-        boosters = [
-            "🏆 **Domain Competition / Recognition**: Participate in industry case study challenges to demonstrate expertise.",
-            "📜 **Recognized Professional Certifications**: Earn recognized certs in your field to validate your skills.",
-            "🚀 **Public Portfolio Hub**: Publish a personal portfolio website or Notion hub showcasing verified project deliverables."
-        ];
-    }
-
-    return {
-        classification: {
-            field: detectedField,
-            targetRole: detectedRole,
-            experienceLevel: expLevel
-        },
-        overallScore,
-        headline,
-        verdict,
-        gatingFlags,
-        categories: {
-            contact: contactScore,
-            skills: skillsScore,
-            projects: projectsScore,
-            experience: experienceScore,
-            achievements: achievementsScore,
-            language: languageScore,
-            formatting: formattingScore,
-            careerNarrative: careerNarrativeScore,
-            impact: experienceScore,
-            brevity: formattingScore,
-            buzzwords: languageScore
-        },
-        strengths,
-        weaknesses,
-        roasts: generatedRoasts,
-        roast: `Analysis for ${candidateName} (${detectedRole}): Out of ${wordCount} words, found ${extractedSkills.length} key skills (${extractedSkills.slice(0, 3).join(', ') || 'general'}) and ${numberCount} metrics. ${numberCount === 0 ? 'Without hard numbers, your bullet points sound like a job description list rather than proof of achievement.' : 'Add live demo links and lead with stronger action verbs to jump into top candidate tiers.'}`,
-        topFixes: [
-            numberCount === 0 ? "Add specific numbers (% growth, users, scale) to every bullet point." : "Lead bullet points with high-impact action verbs (Engineered, Scaled).",
-            extractedLinks.length === 0 ? "Add GitHub or live demo links for your top 2 projects." : "Expand on project architecture and individual contribution.",
-            "Eliminate generic self-praise and replace with direct proof of work."
-        ],
-        resumeBoosters: boosters,
-        isSimulated: true
     };
-}
 
-async function generateAiRoast(resumeText, wordCount) {
-    if (!openai) {
-        return generateSimulatedRoast(resumeText, wordCount);
-    }
+    let lastError = null;
+    let rawJson = null;
+    let successfulModel = null;
 
-    try {
-        const userPrompt = `Analyze and evaluate the following resume text (${wordCount} words):
+    for (const modelName of candidateModels) {
+        try {
+            const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + apiKey;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
 
---- RESUME TEXT START ---
-${resumeText.slice(0, 4000)}
---- RESUME TEXT END ---`;
+            if (!res.ok) {
+                const errorText = await res.text();
+                let friendlyMessage = 'Gemini API Error (' + res.status + ')';
+                try {
+                    const errJson = JSON.parse(errorText);
+                    friendlyMessage = (errJson && errJson.error && errJson.error.message) || friendlyMessage;
+                } catch (_) {}
+                lastError = new Error(friendlyMessage);
+                console.warn('[Gemini] Model ' + modelName + ' failed (' + res.status + '): ' + friendlyMessage + '. Trying fallback...');
+                continue;
+            }
 
-        const response = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            response_format: { type: 'json_object' },
-            messages: [
-                { role: 'system', content: RUBRIC_SYSTEM_PROMPT },
-                { role: 'user', content: userPrompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 1200
-        });
-
-        const parsedContent = JSON.parse(response.choices[0].message.content);
-        parsedContent.isSimulated = false;
-
-        if (parsedContent.categories) {
-            parsedContent.categories.impact = parsedContent.categories.experience || 65;
-            parsedContent.categories.brevity = parsedContent.categories.formatting || 75;
-            parsedContent.categories.buzzwords = parsedContent.categories.language || 70;
+            const data = await res.json();
+            rawJson = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+            if (rawJson) {
+                successfulModel = modelName;
+                break;
+            }
+        } catch (fetchErr) {
+            lastError = fetchErr;
+            console.warn('[Gemini] Model ' + modelName + ' error: ' + fetchErr.message + '. Trying fallback...');
         }
-
-        return parsedContent;
-    } catch (err) {
-        console.error('OpenAI API call failed, using fallback engine:', err.message);
-        const fallbackResult = generateSimulatedRoast(resumeText, wordCount);
-        fallbackResult.apiError = err.message;
-        return fallbackResult;
     }
+
+    if (!rawJson) {
+        throw lastError || new Error('Empty response from Gemini API. Please try again.');
+    }
+
+    // Strip markdown code fences if the model wrapped the JSON (e.g. ```json ... ```)
+    let jsonStr = rawJson.trim();
+    const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) jsonStr = fenceMatch[1].trim();
+    // Also handle cases where there's leading text before the first '{'
+    const braceStart = jsonStr.indexOf('{');
+    if (braceStart > 0) jsonStr = jsonStr.slice(braceStart);
+
+    let parsed;
+    try {
+        parsed = JSON.parse(jsonStr);
+    } catch (e) {
+        console.error('[Gemini] Raw response that failed to parse:', rawJson.slice(0, 300));
+        throw new Error('Gemini returned malformed JSON. Please try again.');
+    }
+
+    // Ensure categories object always has all 4 keys the frontend needs
+    if (!parsed.categories) {
+        parsed.categories = { impact: 50, formatting: 50, brevity: 50, buzzwords: 50 };
+    }
+    parsed.categories.impact     = parsed.categories.impact     != null ? parsed.categories.impact     : 50;
+    parsed.categories.formatting = parsed.categories.formatting != null ? parsed.categories.formatting : 50;
+    parsed.categories.brevity    = parsed.categories.brevity    != null ? parsed.categories.brevity    : 50;
+    parsed.categories.buzzwords  = parsed.categories.buzzwords  != null ? parsed.categories.buzzwords  : 50;
+
+    parsed.isSimulated = false;
+    parsed.aiProvider  = 'Google Gemini 3.5 Flash';
+
+    return parsed;
 }
+
+// ─── MAIN ROUTE ───────────────────────────────────────────────────────────────
 
 app.post('/roast', async (req, res) => {
     try {
@@ -330,7 +245,9 @@ app.post('/roast', async (req, res) => {
                     extractedText = await extractPdfText(file.data);
                 } catch (pdfErr) {
                     console.error('PDF Parsing error:', pdfErr);
-                    return res.status(400).json({ error: 'Could not extract text from this PDF file. It may be scanned (image-only), encrypted, or missing selectable text. Try converting it to TXT or pasting raw text.' });
+                    return res.status(400).json({
+                        error: 'Could not extract text from this PDF. It may be scanned (image-only), encrypted, or missing selectable text. Try converting to TXT or pasting the text directly.'
+                    });
                 }
             } else if (file.mimetype === 'text/plain' || fileName.endsWith('.txt')) {
                 extractedText = file.data.toString('utf-8');
@@ -346,13 +263,27 @@ app.post('/roast', async (req, res) => {
         extractedText = (extractedText || '').trim();
 
         if (!extractedText) {
-            return res.status(400).json({ error: 'Could not extract readable text from the provided resume file. Please ensure it contains selectable text, or paste your text directly.' });
+            return res.status(400).json({
+                error: 'Could not extract readable text from the file. Please ensure it contains selectable text, or paste your resume text directly.'
+            });
         }
 
         const wordCount = extractedText.split(/\s+/).filter(Boolean).length;
         const characterCount = extractedText.length;
+        const roastMode = req.body.roastMode || 'constructive';
 
-        const aiAnalysis = await generateAiRoast(extractedText, wordCount);
+        console.log('[Gemini] Analysing resume (' + wordCount + ' words, tone: ' + roastMode + ')...');
+
+        let aiAnalysis;
+        try {
+            aiAnalysis = await callGeminiApi(extractedText, roastMode);
+            console.log('[Gemini] Analysis complete.');
+        } catch (aiErr) {
+            console.error('[Gemini] AI analysis failed:', aiErr.message);
+            return res.status(503).json({
+                error: 'AI analysis failed: ' + aiErr.message
+            });
+        }
 
         res.json({
             success: true,
@@ -360,14 +291,17 @@ app.post('/roast', async (req, res) => {
             characterCount: characterCount,
             wordCount: wordCount,
             analysis: aiAnalysis,
-            message: 'Resume analyzed successfully!'
+            message: 'Resume analysed successfully!'
         });
+
     } catch (err) {
-        console.error('Extraction error:', err);
-        res.status(500).json({ error: `Failed to process resume: ${err.message || 'Unknown error'}` });
+        console.error('Unexpected error:', err);
+        res.status(500).json({ error: 'Server error: ' + (err.message || 'Unknown error') });
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+app.listen(PORT, function() {
+    console.log('Server running at http://localhost:' + PORT);
 });
+
+module.exports = { callGeminiApi };

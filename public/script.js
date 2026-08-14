@@ -31,14 +31,10 @@ const barBrevity = document.getElementById('barBrevity');
 const scoreBuzzwords = document.getElementById('scoreBuzzwords');
 const barBuzzwords = document.getElementById('barBuzzwords');
 
-const quotedRoastsContainer = document.getElementById('quotedRoastsContainer');
 const boostersCard = document.getElementById('boostersCard');
 const boostersList = document.getElementById('boostersList');
 const strengthsList = document.getElementById('strengthsList');
 const weaknessesList = document.getElementById('weaknessesList');
-const roastNarrative = document.getElementById('roastNarrative');
-const actionTipsList = document.getElementById('actionTipsList');
-const copyRoastBtn = document.getElementById('copyRoastBtn');
 const previewBox = document.getElementById('previewBox');
 
 let activeTab = 'upload';
@@ -88,22 +84,6 @@ function updateFileDisplay() {
     }
 }
 
-copyRoastBtn.addEventListener('click', () => {
-    const reportText = `🔥 RESUME ROASTER REPORT 🔥
-Overall Score: ${overallScoreBadge.textContent}/100
-Headline: ${roastHeadline.textContent}
-${verdictBanner.textContent ? '\n' + verdictBanner.textContent + '\n' : ''}
-Critique:
-${roastNarrative.textContent}`;
-
-    navigator.clipboard.writeText(reportText).then(() => {
-        const originalText = copyRoastBtn.textContent;
-        copyRoastBtn.textContent = '✅ Copied!';
-        setTimeout(() => copyRoastBtn.textContent = originalText, 2000);
-    }).catch(err => {
-        console.error('Copy failed:', err);
-    });
-});
 
 roastForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -126,6 +106,10 @@ roastForm.addEventListener('submit', async (e) => {
         }
         formData.append('resumeText', text);
     }
+
+    const roastModeSelect = document.getElementById('roastModeSelect');
+    const roastMode = roastModeSelect ? roastModeSelect.value : 'constructive';
+    formData.append('roastMode', roastMode);
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Analyzing Resume...';
@@ -179,7 +163,13 @@ function stopLoadingAnimation() {
 function renderAnalysisResults(data) {
     const analysis = data.analysis;
 
-    simulatedBanner.style.display = analysis.isSimulated ? 'block' : 'none';
+    if (analysis.isSimulated) {
+        simulatedBanner.innerHTML = 'ℹ️ Running in <strong>Simulated AI Mode</strong>. (Tip: Get a 100% FREE Gemini API key at <a href="https://aistudio.google.com" target="_blank" style="color: #60a5fa; text-decoration: underline;">aistudio.google.com</a> and add <code>GEMINI_API_KEY</code> to <code>.env</code> for live AI).';
+        simulatedBanner.style.display = 'block';
+    } else {
+        simulatedBanner.innerHTML = `✨ Powered by <strong>Live AI (${escapeHtml(analysis.aiProvider || 'LLM')})</strong>.`;
+        simulatedBanner.style.display = 'block';
+    }
 
     if (analysis.gatingFlags && analysis.gatingFlags.length > 0) {
         gatingBanner.style.display = 'block';
@@ -198,7 +188,10 @@ function renderAnalysisResults(data) {
         <span class="class-tag">📈 Level: ${escapeHtml(detectedLevel)}</span>
     `;
 
-    if (analysis.verdict) {
+    if (analysis.overallVerdict) {
+        verdictBanner.innerHTML = `<strong style="font-size: 1.05rem; color: #f97316;">Overall Verdict</strong><p style="margin-top: 0.35rem; font-size: 0.95rem; line-height: 1.4;">${escapeHtml(analysis.overallVerdict)}</p>`;
+        verdictBanner.style.display = 'block';
+    } else if (analysis.verdict) {
         verdictBanner.textContent = analysis.verdict;
         verdictBanner.style.display = 'block';
     } else {
@@ -207,7 +200,8 @@ function renderAnalysisResults(data) {
 
     statWords.textContent = data.wordCount;
     statChars.textContent = data.characterCount;
-    roastHeadline.textContent = `"${analysis.headline || ''}"`;
+    const rawHeadline = (analysis.headline || '').replace(/^["'\s]+|["'\s]+$/g, '').trim();
+    roastHeadline.textContent = `"${rawHeadline}"`;
 
     const score = Math.round(analysis.overallScore || 0);
     overallScoreBadge.textContent = score;
@@ -222,30 +216,12 @@ function renderAnalysisResults(data) {
     strengthsList.innerHTML = (analysis.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
     weaknessesList.innerHTML = (analysis.weaknesses || []).map(w => `<li>${escapeHtml(w)}</li>`).join('');
 
-    if (analysis.roasts && analysis.roasts.length > 0) {
-        quotedRoastsContainer.innerHTML = '<h4>🔥 Quoted Line Critique & Fixes</h4>' + analysis.roasts.map(r => `
-            <div class="quoted-roast-card">
-                <div class="quote-block">"${escapeHtml(r.quote || '')}"</div>
-                <div class="roast-block">🔥 ${escapeHtml(r.roast || '')}</div>
-                <div class="fix-block">💡 <strong>Fix:</strong> ${escapeHtml(r.fix || '')}</div>
-            </div>
-        `).join('');
-        quotedRoastsContainer.style.display = 'block';
-    } else {
-        quotedRoastsContainer.style.display = 'none';
-    }
-
     if (analysis.resumeBoosters && analysis.resumeBoosters.length > 0) {
         boostersList.innerHTML = analysis.resumeBoosters.map(b => `<li>${formatMarkdownText(b)}</li>`).join('');
         boostersCard.style.display = 'block';
     } else {
         boostersCard.style.display = 'none';
     }
-
-    roastNarrative.textContent = analysis.roast || '';
-
-    const tips = analysis.topFixes || analysis.actionableTips || [];
-    actionTipsList.innerHTML = tips.map(t => `<li>${escapeHtml(t)}</li>`).join('');
 
     previewBox.textContent = data.extractedText;
 

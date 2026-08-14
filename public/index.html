@@ -36,6 +36,15 @@
                 <textarea id="textInput" placeholder="Paste your resume contents here..."></textarea>
             </div>
 
+            <div style="margin-top: 1rem; margin-bottom: 1.25rem;">
+                <label for="roastModeSelect" style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.4rem; font-weight: 500;">🔥 Select Roast Intensity & Tone:</label>
+                <select id="roastModeSelect" style="width: 100%; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; padding: 0.65rem 1rem; border-radius: 8px; font-family: inherit; font-size: 0.9rem; cursor: pointer; outline: none;">
+                    <option value="savage">🔥 Savage Roast (Brutally Honest & Witty)</option>
+                    <option value="constructive" selected>⚡ Constructive Audit (Balanced & Direct)</option>
+                    <option value="mild">🧘 Mild Critique (Encouraging & Gentle)</option>
+                </select>
+            </div>
+
             <button type="submit" class="submit-btn" id="submitBtn">Roast & Analyze Resume 🔥</button>
         </form>
 
@@ -123,24 +132,9 @@
                 </div>
             </div>
 
-            <div class="quoted-roasts-container" id="quotedRoastsContainer"></div>
-
             <div class="boosters-card" id="boostersCard" style="display: none;">
                 <h3>🌟 Strategic Profile Boosters (Recommended Additions)</h3>
                 <ul id="boostersList"></ul>
-            </div>
-
-            <div class="roast-narrative-card">
-                <div class="card-header-actions">
-                    <h3>🔥 The Roast & Critique</h3>
-                    <button type="button" class="copy-btn" id="copyRoastBtn">📋 Copy Report</button>
-                </div>
-                <div class="roast-text" id="roastNarrative"></div>
-            </div>
-
-            <div class="tips-card">
-                <h3>🚀 Action Plan</h3>
-                <ol id="actionTipsList"></ol>
             </div>
 
             <details class="extracted-text-details">
