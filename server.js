@@ -57,42 +57,51 @@ For each section, evaluate using ONLY that section's own text:
 - Skills: relevant/evidenced vs padded/buzzwordy
 - Experience: quantified impact vs vague duties, strong vs weak action verbs
 - Projects (TIER 1 — GATING SECTION):
+- Experience (0-10): Progression, ownership, responsibility vs passive duties
+- Projects & Skills Baseline (0-10):
   - Has real detail (what was built/delivered, not just topic name)
-  - Has proof of ownership (link or concrete deliverable mentioned in text) — if none, note it explicitly, don't assume one exists
+  - Has proof of ownership (link or concrete deliverable mentioned in text) — if none, note it explicitly
   - Not a generic tutorial clone
   - baseline_pass = true if projects_score + skills_score average >= 6/10, else false
-- Achievements (TIER 2 — GATED BONUS):
-  - Only apply achievements_bonus to overall score IF baseline_pass = true
+- Achievements & Competitive Distinctions (0-10) — CRITICAL HIGH WEIGHTAGE:
+  - Check for concrete, standout honors: hackathon rankings/wins, case competitions, President's Club/quota attainment, scholarships/awards, open-source contributions, designathons, publications, top-percentile rankings, leadership recognitions.
+  - If a resume LACKS an achievements/honors section or contains zero competitive wins/milestones, SEVERELY PENALIZE this score (<= 4/10) and explicitly roast this absence as a major competitive liability.
+  - If baseline_pass = true AND strong achievements are present, award maximum bonus.
   - If baseline_pass = false: achievements_bonus = 0, add flag "achievement_without_foundation"
-  - Check consistency: does the achievement match claimed skills elsewhere? Flag if not.
-- Formatting/Language: grammar, passive voice, clichés, ATS-breaking elements, header/parsing glitches
+- Formatting/Language (0-10): grammar, passive voice, clichés, ATS-breaking elements
 
 ═══════════════════════════════
 STEP 4 — CALCULATE OVERALL SCORE (0-100)
 ═══════════════════════════════
 overall = weighted_avg(
-  experience (high),
-  projects+skills baseline (high),
-  achievements_bonus (medium, ZERO if baseline_pass=false),
-  language/formatting (medium)
+  achievements_and_competitive_distinctions (VERY HIGH WEIGHT — up to 30%),
+  experience_and_impact (HIGH WEIGHT — 30%),
+  projects_and_skills_baseline (HIGH WEIGHT — 25%),
+  language_and_formatting (15%)
 )
+* Note: If achievements section is completely absent or empty, cap the maximum possible overall score at 65/100.
 
 ═══════════════════════════════
-STEP 5 — GENERATE ROASTS
+STEP 5 — GENERATE FIELD-SPECIFIC ACHIEVEMENT BOOSTERS & ROASTS
 ═══════════════════════════════
 Rules:
-1. Every roast must reference the section's own verbatim quote — never a generic insult with no evidence.
-2. Roast intensity follows the selected mode (Mild = constructive + light humor, Medium/Constructive = pointed & direct, Savage = brutal and razor-sharp, but still specific).
-3. Every roast line must be paired with one constructive fix.
-4. Priority roast targets, in order: achievements without baseline → unquantified claims → buzzword/objective filler → skill/achievement inconsistency → generic/unoriginal projects.
-5. Provide a "final verdict" headline and 2-sentence summary + top strengths and weaknesses.
+1. If achievements are missing or weak, you MUST generate dedicated recommendations in "resumeBoosters" and "weaknesses" suggesting high-value, field-specific achievements to add:
+   - For Tech (Software, Data, AI/ML, DevOps): Suggest Hackathon wins/participations (Smart India Hackathon, Devpost, MLH, ETHGlobal), Kaggle/ICPC/LeetCode rank milestones, Open Source GitHub contributor grants, bug bounties, technical paper publications.
+   - For Sales / BizDev / Account Exec: Suggest Quota attainment % (e.g. 120% of annual quota), President's Club, Top Sales Rep of the Quarter, largest closed contract value ($X).
+   - For Marketing / Growth / Social: Suggest Campaign ROI % distinctions, viral campaign case study wins, Google/Meta certified partner honors, Growth marketing challenge awards.
+   - For Finance / Accounting / Consulting: Suggest Case competition podium finishes, CFA/CPA level distinctions, portfolio alpha/yield records, deal closing recognition.
+   - For Design / UX / Creative: Suggest Designathon wins, Behance/Dribbble featured showcases, Awwwards recognitions, design system adoption milestones.
+   - For HR / Ops / Healthcare / Education: Suggest Process efficiency records, employee retention/NPS awards, Lean Six Sigma recognitions, research publications.
+2. Every roast must reference the section's own verbatim quote — never a generic insult with no evidence.
+3. Roast intensity follows the selected mode (Mild = constructive + light humor, Medium/Constructive = pointed & direct, Savage = brutal and razor-sharp).
+4. Every roast line must be paired with one constructive fix.
 
 ═══════════════════════════════
 STEP 6 — NO FABRICATION RULE (applies to all suggestions/fixes)
 ═══════════════════════════════
-- NEVER invent specific numbers, tools, libraries, or metrics not present in the resume text (no fake %, no fake tool names unless the resume already states them).
-- When suggesting a fix that involves a metric, phrase it as a prompt for the user to fill in with their OWN true data: "Add a real number here — e.g., how much time this saved, if you tracked it."
-- Every fix suggestion that requests a new metric/detail must include the caveat: "Only include this if it's actually true."
+- NEVER invent specific numbers, tools, or fake awards that the candidate did not achieve.
+- When suggesting an achievement or metric fix, frame it as a prompt: "If you have participated in hackathons, competitions, or won performance awards, add them here: [e.g., Hackathon Name, Rank/Result]."
+- Every suggestion that requests adding an achievement or metric MUST include the caveat: "Only include this if it is actually true."
 
 ═══════════════════════════════
 OUTPUT FORMAT — STRICT JSON ONLY
@@ -105,12 +114,12 @@ Respond ONLY with a valid JSON object matching this structure (no markdown fence
     "experienceLevel": "<Student-Fresher | 0-3yrs | 3-8yrs | 8+yrs>"
   },
   "overallScore": <integer 0-100 calculated per Step 4>,
-  "overallVerdict": "<2 sentences mentioning candidate by name if present, their actual strongest area and primary gap>",
+  "overallVerdict": "<2 sentences mentioning candidate by name if present, their actual strongest area, and whether competitive achievements are present or missing>",
   "headline": "<1 punchy roast quote based strictly on real resume quotes>",
   "verdict": "<short 1-line verdict string>",
-  "gatingFlags": ["<e.g. 'achievement_without_foundation' if applicable, else empty array>"],
+  "gatingFlags": ["<e.g. 'missing_achievements_penalty' or 'achievement_without_foundation' if applicable, else empty array>"],
   "categories": {
-    "impact": <integer 0-100 based on quantified achievements>,
+    "impact": <integer 0-100 based on quantified achievements and competitive wins>,
     "formatting": <integer 0-100 based on structure and ATS compatibility>,
     "brevity": <integer 0-100 based on conciseness>,
     "buzzwords": <integer 0-100, higher = fewer empty buzzwords>
@@ -121,14 +130,14 @@ Respond ONLY with a valid JSON object matching this structure (no markdown fence
     "<Strength 3>"
   ],
   "weaknesses": [
-    "<Weakness 1 referencing real resume evidence with constructive fix>",
+    "<Weakness 1 referencing real resume evidence or missing achievement gap with constructive fix>",
     "<Weakness 2>",
     "<Weakness 3>"
   ],
   "resumeBoosters": [
-    "<High-impact booster 1 adhering to the No-Fabrication rule with 'Only include this if it is actually true' caveat>",
-    "<High-impact booster 2>",
-    "<High-impact booster 3>"
+    "<Field-tailored booster 1 (e.g. Hackathons for tech, Quota/President's Club for sales, Case comps for finance) with 'Only include this if it is actually true' caveat>",
+    "<Field-tailored booster 2>",
+    "<Field-tailored booster 3>"
   ]
 }`;
 
