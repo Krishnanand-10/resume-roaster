@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <!-- AMBIENT VOLCANIC GLOW ORBS -->
@@ -15,20 +17,73 @@
     <div class="ambient-glow glow-center"></div>
 
     <div class="page-container">
-        <!-- TOP BRAND NAV -->
+        <!-- TOP BRAND NAV (Smart Learn layout) -->
         <nav class="top-nav">
-            <div class="brand-badge">
-                <span class="flame-pulse">🔥</span>
-                <span class="brand-text">RESUME ROASTER</span>
-            </div>
-            <div class="live-pill">
-                <span class="live-dot"></span>
-                <span>AI MODEL LIVE</span>
+            <a href="/" class="brand-badge-link">
+                <div class="brand-badge">
+                    <span class="flame-pulse">🔥</span>
+                    <span class="brand-text">RESUME ROASTER</span>
+                </div>
+            </a>
+            
+            <div class="nav-right">
+                <a href="/app" class="open-app-btn" id="openAppNavBtn" style="display: none;">
+                    <span>Open App 🔥</span>
+                </a>
+
+                <!-- SIGN IN BUTTON IN NAV (On Far Right) -->
+                <button type="button" class="nav-signin-btn" id="navSignInBtn">
+                    <span>Sign In</span>
+                </button>
+                
+                <!-- USER PROFILE AVATAR & DROPDOWN MENU -->
+                <div class="user-profile-wrapper" id="userProfileWrapper" style="display: none;">
+                    <button type="button" class="user-avatar-btn" id="userAvatarBtn" aria-expanded="false" aria-label="Open profile settings">
+                        <img class="user-avatar-img" id="userAvatarImg" src="" alt="Avatar" style="display: none;">
+                        <span class="user-avatar-initial" id="userAvatarInitial">K</span>
+                    </button>
+
+                    <!-- FLOATING SETTINGS DROPDOWN -->
+                    <div class="profile-dropdown-menu" id="profileDropdownMenu" style="display: none;">
+                        <div class="dropdown-header">
+                            <div class="dropdown-avatar-wrap">
+                                <img class="dropdown-avatar-img" id="dropdownAvatarImg" src="" alt="Avatar" style="display: none;">
+                                <span class="dropdown-avatar-initial" id="dropdownAvatarInitial">K</span>
+                            </div>
+                            <div class="dropdown-user-info">
+                                <strong class="dropdown-user-name" id="dropdownUserName">User Name</strong>
+                                <span class="dropdown-user-email" id="dropdownUserEmail">user@example.com</span>
+                                <span class="dropdown-google-badge">
+                                    <svg width="12" height="12" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                                    Google Account
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <div class="dropdown-actions">
+                            <button type="button" class="dropdown-item" id="logoutDropdownBtn">
+                                <span class="item-icon">🚪</span>
+                                <span>Sign Out</span>
+                            </button>
+
+                            <button type="button" class="dropdown-item item-danger" id="deleteAccountDropdownBtn">
+                                <span class="item-icon">🗑️</span>
+                                <span>Delete Account</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </nav>
 
         <!-- HERO SECTION -->
         <header class="hero-section">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                <span>1.0.0 Live Now • Multi-LLM Roasting</span>
+            </div>
             <h1 class="hero-headline">
                 YOUR RESUME DESERVES <br>
                 <span class="glow-text">A TRIAL BY FIRE.</span>
@@ -36,189 +91,152 @@
             <p class="hero-lead">
                 Unfiltered AI critique, real-world metric auditing, and actionable upgrades. No recruiter fluff, zero sugarcoating.
             </p>
+
+            <!-- HERO CTA BUTTONS (Smart Learn style) -->
+            <div class="hero-cta-group" id="heroCtaGroup">
+                <!-- Logged-Out CTAs -->
+                <div class="cta-logged-out" id="ctaLoggedOut">
+                    <button type="button" class="hero-btn-primary" id="heroGetStartedBtn">
+                        <span class="btn-shimmer"></span>
+                        <span>Get Started</span>
+                    </button>
+                    <button type="button" class="hero-btn-secondary" id="heroSignUpBtn">
+                        <span>Sign Up</span>
+                    </button>
+                </div>
+
+                <!-- Logged-In CTA -->
+                <div class="cta-logged-in" id="ctaLoggedIn" style="display: none;">
+                    <a href="/app" class="hero-btn-primary" id="heroGoToRoasterBtn">
+                        <span class="btn-shimmer"></span>
+                        <span>🔥 Launch Resume Incinerator</span>
+                    </a>
+                </div>
+            </div>
         </header>
 
-        <!-- MAIN INTERACTION TERMINAL -->
-        <main class="terminal-card">
-            <!-- FLOATING PILL TABS -->
-            <div class="tab-pill-container" role="tablist">
-                <button type="button" class="tab-pill active" id="tabUpload" role="tab" aria-selected="true">
-                    <span class="tab-icon">📄</span>
-                    <span>Upload Resume</span>
-                </button>
-                <button type="button" class="tab-pill" id="tabPaste" role="tab" aria-selected="false">
-                    <span class="tab-icon">✍️</span>
-                    <span>Paste Raw Text</span>
-                </button>
+        <!-- ─── SCROLLING FEATURES SHOWCASE (Smart Learn Style) ─── -->
+        <section class="features-section" id="featuresSection">
+            <div class="section-header">
+                <h2 class="section-title">Features</h2>
+                <p class="section-subtitle">
+                    Resume Roaster combines multi-LLM intelligence, ATS parsing, and rubric gating to analyze, roast, and elevate your career profile.
+                </p>
             </div>
 
-            <form id="roastForm">
-                <!-- UPLOAD ZONE -->
-                <div class="tab-content active" id="contentUpload">
-                    <div class="molten-dropzone" id="dropzone">
-                        <div class="dropzone-core">
-                            <div class="icon-hearth">
-                                <span class="hearth-flame">🔥</span>
-                            </div>
-                            <h3 class="hearth-title">Drag & drop your resume into the hearth</h3>
-                            <p class="hearth-desc">Supports PDF and TXT documents • <span class="browse-btn-text">Browse Files</span></p>
-                            <div class="hearth-meta">
-                                <span class="meta-tag">PDF</span>
-                                <span class="meta-tag">TXT</span>
-                                <span class="meta-tag">MAX 10MB</span>
-                            </div>
-                        </div>
-                        <div class="file-selected" id="fileNameDisplay"></div>
+            <div class="features-grid">
+                <!-- FEATURE 1 -->
+                <div class="feature-card">
+                    <div class="card-glow-line" style="--accent-color: #ff5500;"></div>
+                    <div class="feature-icon-wrap" style="--icon-bg: rgba(255, 85, 0, 0.12); --icon-border: rgba(255, 85, 0, 0.3);">
+                        <span class="feature-emoji">🤖</span>
                     </div>
-                    <input type="file" id="fileInput" accept=".pdf,.txt">
+                    <h3 class="feature-title">Multi-LLM Intelligence</h3>
+                    <p class="feature-desc">
+                        Powered by Google Gemini 3.5 Flash, OpenAI GPT-4o, and Anthropic Claude with automatic failover cascading.
+                    </p>
                 </div>
 
-                <!-- PASTE RAW TEXT -->
-                <div class="tab-content" id="contentPaste">
-                    <div class="editor-frame">
-                        <textarea id="textInput" placeholder="Paste your resume content here..."></textarea>
+                <!-- FEATURE 2 -->
+                <div class="feature-card">
+                    <div class="card-glow-line" style="--accent-color: #f97316;"></div>
+                    <div class="feature-icon-wrap" style="--icon-bg: rgba(249, 115, 22, 0.12); --icon-border: rgba(249, 115, 22, 0.3);">
+                        <span class="feature-emoji">🔥</span>
                     </div>
+                    <h3 class="feature-title">Savage Roast Modes</h3>
+                    <p class="feature-desc">
+                        Switch between Mild encouragement, Constructive recruiter critique, and unhinged Savage emotional damage.
+                    </p>
                 </div>
 
-                <!-- ROAST INTENSITY SELECTOR -->
-                <div class="intensity-module">
-                    <div class="module-header">
-                        <span class="module-title">Roast Intensity</span>
-                        <span class="module-hint">Select the critique tone</span>
+                <!-- FEATURE 3 -->
+                <div class="feature-card">
+                    <div class="card-glow-line" style="--accent-color: #fbbf24;"></div>
+                    <div class="feature-icon-wrap" style="--icon-bg: rgba(251, 191, 36, 0.12); --icon-border: rgba(251, 191, 36, 0.3);">
+                        <span class="feature-emoji">📊</span>
                     </div>
-                    <div class="intensity-tabs">
-                        <label class="intensity-option">
-                            <input type="radio" name="roastMode" value="mild">
-                            <div class="intensity-card">
-                                <span class="opt-emoji">🌱</span>
-                                <span class="opt-name">Mild</span>
-                                <span class="opt-desc">Encouraging & gentle</span>
-                            </div>
-                        </label>
-                        <label class="intensity-option">
-                            <input type="radio" name="roastMode" value="constructive" checked>
-                            <div class="intensity-card">
-                                <span class="opt-emoji">⚡</span>
-                                <span class="opt-name">Constructive</span>
-                                <span class="opt-desc">Direct & balanced</span>
-                            </div>
-                        </label>
-                        <label class="intensity-option">
-                            <input type="radio" name="roastMode" value="savage">
-                            <div class="intensity-card savage-card">
-                                <span class="opt-emoji">🔥</span>
-                                <span class="opt-name">Savage</span>
-                                <span class="opt-desc">Brutally honest</span>
-                            </div>
-                        </label>
-                    </div>
-                    <select id="roastModeSelect" style="display: none;">
-                        <option value="savage">savage</option>
-                        <option value="constructive" selected>constructive</option>
-                        <option value="mild">mild</option>
-                    </select>
+                    <h3 class="feature-title">Metric & Impact Auditing</h3>
+                    <p class="feature-desc">
+                        Scans every bullet point for quantified business results, percentages, and revenue metrics versus passive duties.
+                    </p>
                 </div>
 
-                <!-- IGNITE CTA BUTTON -->
-                <button type="submit" class="ignite-button" id="submitBtn">
-                    <span class="btn-shimmer"></span>
-                    <span class="btn-text">🔥 Ignite & Roast Resume</span>
-                </button>
-            </form>
-
-            <div class="error-message" id="errorMessage"></div>
-
-            <div class="loading-container" id="loadingContainer">
-                <div class="fire-pulse-loader">
-                    <div class="loader-flame">🔥</div>
+                <!-- FEATURE 4 -->
+                <div class="feature-card">
+                    <div class="card-glow-line" style="--accent-color: #ec4899;"></div>
+                    <div class="feature-icon-wrap" style="--icon-bg: rgba(236, 72, 153, 0.12); --icon-border: rgba(236, 72, 153, 0.3);">
+                        <span class="feature-emoji">🚫</span>
+                    </div>
+                    <h3 class="feature-title">Buzzword & Cliché Detector</h3>
+                    <p class="feature-desc">
+                        Penalizes meaningless fluff like "results-driven team player" and replaces clichés with high-signal deliverables.
+                    </p>
                 </div>
-                <p id="loadingStatusText">Analyzing resume structure...</p>
+
+                <!-- FEATURE 5 -->
+                <div class="feature-card">
+                    <div class="card-glow-line" style="--accent-color: #06b6d4;"></div>
+                    <div class="feature-icon-wrap" style="--icon-bg: rgba(6, 182, 212, 0.12); --icon-border: rgba(6, 182, 212, 0.3);">
+                        <span class="feature-emoji">📄</span>
+                    </div>
+                    <h3 class="feature-title">Instant File Parsing</h3>
+                    <p class="feature-desc">
+                        High-speed PDF text extraction and plain text processing with structured section boundary isolation.
+                    </p>
+                </div>
+
+                <!-- FEATURE 6 -->
+                <div class="feature-card">
+                    <div class="card-glow-line" style="--accent-color: #10b981;"></div>
+                    <div class="feature-icon-wrap" style="--icon-bg: rgba(16, 185, 129, 0.12); --icon-border: rgba(16, 185, 129, 0.3);">
+                        <span class="feature-emoji">🌟</span>
+                    </div>
+                    <h3 class="feature-title">Strategic Profile Boosters</h3>
+                    <p class="feature-desc">
+                        Field-tailored recommendations for hackathons, competitive coding, case competitions, and standout certifications.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <div class="footer-brand">
+                <span class="flame-pulse">🔥</span>
+                <span>RESUME ROASTER</span>
+            </div>
+            <p class="footer-copy">Built with 🔥 for job seekers everywhere. Unfiltered truth for career growth.</p>
+        </footer>
+    </div>
+
+    <!-- ─── AUTHENTICATION POPUP MODAL ─── -->
+    <div class="auth-modal-backdrop" id="authModalBackdrop" style="display: none;">
+        <div class="auth-modal-card" id="authModalCard">
+            <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">✕</button>
+            
+            <div class="auth-gate-header">
+                <div class="icon-hearth">
+                    <span class="hearth-flame">🔥</span>
+                </div>
+                <h2 class="auth-title">ENTER THE INCINERATOR</h2>
+                <p class="auth-subtitle">
+                    Sign in with your Google account to unlock full resume auditing, metric verification, and brutal AI roast critiques.
+                </p>
             </div>
 
-            <!-- RESULTS SECTION -->
-            <div id="resultContainer">
-                <div class="simulated-banner" id="simulatedBanner" style="display: none;"></div>
-
-                <div class="classification-bar" id="classificationBar"></div>
-
-                <div class="score-header-card">
-                    <div class="score-circle-wrap">
-                        <div class="score-circle" id="overallScoreBadge">0</div>
-                        <div class="score-label">OVERALL SCORE</div>
-                    </div>
-                    <div class="score-headline-wrap">
-                        <blockquote class="roast-headline" id="roastHeadline">"Loading headline..."</blockquote>
-                        <div class="stats-badge">
-                            <span>Words: <strong id="statWords">0</strong></span>
-                            <span>Chars: <strong id="statChars">0</strong></span>
-                        </div>
-                    </div>
+            <!-- GOOGLE SIGN IN BUTTON CONTAINER -->
+            <div class="google-auth-wrapper">
+                <div id="googleBtnContainer" class="google-btn-slot"></div>
+                <div id="googleFallbackContainer" class="dev-login-wrap" style="display: none;">
+                    <button type="button" class="dev-login-btn" id="devLoginBtn">
+                        <span class="dev-icon">⚡</span>
+                        <span>Sign in with Google (Dev Demo Mode)</span>
+                    </button>
                 </div>
-
-                <div class="verdict-banner" id="verdictBanner"></div>
-
-                <div class="categories-grid">
-                    <div class="category-card">
-                        <div class="category-header">
-                            <span>💥 Impact Metrics</span>
-                            <span id="scoreImpact">0%</span>
-                        </div>
-                        <div class="progress-bar-track">
-                            <div class="progress-bar-fill" id="barImpact" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="category-card">
-                        <div class="category-header">
-                            <span>📐 Formatting & ATS</span>
-                            <span id="scoreFormatting">0%</span>
-                        </div>
-                        <div class="progress-bar-track">
-                            <div class="progress-bar-fill" id="barFormatting" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="category-card">
-                        <div class="category-header">
-                            <span>⚡ Brevity & Readability</span>
-                            <span id="scoreBrevity">0%</span>
-                        </div>
-                        <div class="progress-bar-track">
-                            <div class="progress-bar-fill" id="barBrevity" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="category-card">
-                        <div class="category-header">
-                            <span>🚫 Buzzword Index</span>
-                            <span id="scoreBuzzwords">0%</span>
-                        </div>
-                        <div class="progress-bar-track">
-                            <div class="progress-bar-fill" id="barBuzzwords" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="feedback-grid">
-                    <div class="feedback-card strengths-card">
-                        <h4>👍 Key Strengths</h4>
-                        <ul id="strengthsList"></ul>
-                    </div>
-                    <div class="feedback-card weaknesses-card">
-                        <h4>⚠️ Critical Gaps</h4>
-                        <ul id="weaknessesList"></ul>
-                    </div>
-                </div>
-
-                <div class="boosters-card" id="boostersCard" style="display: none;">
-                    <h3>🌟 Strategic Profile Boosters</h3>
-                    <ul id="boostersList"></ul>
-                </div>
-
-                <details class="extracted-text-details">
-                    <summary>📄 View Extracted Resume Text</summary>
-                    <div class="preview-box" id="previewBox"></div>
-                </details>
             </div>
-        </main>
+        </div>
     </div>
 
     <script src="script.js"></script>
 </body>
+</html>
