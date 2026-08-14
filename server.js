@@ -1,8 +1,11 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const fileUpload = require('express-fileupload');
 const pdfModule = require('pdf-parse');
 const rateLimit = require('express-rate-limit');
+const cookieSession = require('cookie-session');
+const { OAuth2Client } = require('google-auth-library');
 const OpenAI = require('openai');
 const { Anthropic } = require('@anthropic-ai/sdk');
 
@@ -12,6 +15,121 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static('public'));
 app.use(express.json());
 app.use(fileUpload());
+
+// Serve dedicated App Workspace Page
+app.get('/app', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
+});
+
+// ─── SESSION MANAGEMENT ───────────────────────────────────────────────────────
+
+app.use(cookieSession({
+    name: 'rr_session',
+    keys: [process.env.SESSION_SECRET || 'resume-roaster-session-secret-key-10923847'],
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+}));
+
+// ─── GOOGLE AUTH HELPER ───────────────────────────────────────────────────────
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+async function verifyGoogleToken(credential) {
+    const configuredId = process.env.GOOGLE_CLIENT_ID;
+    if (!configuredId || configuredId === 'your_google_client_id_here') {
+        // Fallback decoder if testing in dev mode without Google Cloud credentials
+        try {
+            const parts = credential.split('.');
+            if (parts.length === 3) {
+                const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
+                return {
+                    name: payload.name || 'Google User',
+                    email: payload.email || 'user@example.com',
+                    picture: payload.picture || '',
+                    sub: payload.sub || 'test-user-123'
+                };
+            }
+        } catch (_) {}
+        return {
+            name: 'Demo Google User',
+            email: 'demo@example.com',
+            picture: '',
+            sub: 'demo-user-123'
+        };
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: configuredId
+    });
+    const payload = ticket.getPayload();
+    return {
+        name: payload.name,
+        email: payload.email,
+        picture: payload.picture,
+        sub: payload.sub
+    };
+}
+
+// ─── AUTHENTICATION ROUTES ───────────────────────────────────────────────────
+
+app.get('/auth/config', (req, res) => {
+    const cid = process.env.GOOGLE_CLIENT_ID;
+    res.json({
+        googleClientId: (cid && cid !== 'your_google_client_id_here') ? cid : ''
+    });
+});
+
+app.get('/auth/me', (req, res) => {
+    if (req.session && req.session.user) {
+        return res.json({ authenticated: true, user: req.session.user });
+    }
+    res.json({ authenticated: false, user: null });
+});
+
+app.post('/auth/google', async (req, res) => {
+    try {
+        const { credential } = req.body;
+        if (!credential) {
+            return res.status(400).json({ error: 'Missing Google credential token.' });
+        }
+        const user = await verifyGoogleToken(credential);
+        req.session.user = {
+            id: user.sub,
+            name: user.name,
+            email: user.email,
+            picture: user.picture
+        };
+        res.json({ success: true, user: req.session.user });
+    } catch (err) {
+        console.error('Google Auth Error:', err.message);
+        res.status(401).json({ error: 'Authentication failed: ' + err.message });
+    }
+});
+
+app.post('/auth/dev-login', (req, res) => {
+    req.session.user = {
+        id: 'dev-user-001',
+        name: req.body?.name || 'Krishnanand',
+        email: req.body?.email || 'krishnanand@example.com',
+        picture: ''
+    };
+    res.json({ success: true, user: req.session.user });
+});
+
+app.post('/auth/logout', (req, res) => {
+    req.session = null;
+    res.json({ success: true, message: 'Logged out successfully.' });
+});
+
+app.post('/auth/delete-account', (req, res) => {
+    if (req.session && req.session.user) {
+        console.log(`[Auth] Account deleted for user: ${req.session.user.email || req.session.user.name}`);
+    }
+    req.session = null;
+    res.json({ success: true, message: 'Account and session data deleted permanently.' });
+});
 
 // ─── RATE LIMITING ────────────────────────────────────────────────────────────
 
@@ -44,9 +162,126 @@ async function extractPdfText(buffer) {
     }
 }
 
+// ─── RESUME VALIDATION & GATEKEEPER ───────────────────────────────────────────
+
+function isValidResumeText(text) {
+    if (!text || typeof text !== 'string') {
+        return { valid: false, reason: 'No document text provided.' };
+    }
+    const cleanText = text.trim();
+    const words = cleanText.split(/\s+/).filter(Boolean);
+    if (words.length < 15) {
+        return { valid: false, reason: 'Only resumes and CVs are allowed. The uploaded document is too short to be a valid resume.' };
+    }
+
+    // ── Explicit Non-Resume Filters ──
+
+    // Recipes — only reject if it matches AND lacks resume structure
+    if (/\b(ingredients|tablespoon|teaspoon|preheat oven|cup of|baking sheet|recipe|cook for|stir well)\b/i.test(cleanText)) {
+        const hasResumeStructure = /\b(work experience|professional experience|employment|skills|education|bachelor|master|degree|project)\b/i.test(cleanText);
+        if (!hasResumeStructure) {
+            return { valid: false, reason: 'Only resumes and CVs are allowed. This looks like a recipe, not a resume.' };
+        }
+    }
+    // Song lyrics
+    if (/\b(verse \d|chorus|lyrics|performed by|tracklist|album)\b/i.test(cleanText) && !/\b(work experience|professional experience)\b/i.test(cleanText)) {
+        return { valid: false, reason: 'Only resumes and CVs are allowed. This looks like song lyrics, not a resume.' };
+    }
+    // Placeholder text
+    if (/^(lorem ipsum|the quick brown fox|asdf|qwerty)/i.test(cleanText)) {
+        return { valid: false, reason: 'Only resumes and CVs are allowed. This contains placeholder text, not a real resume.' };
+    }
+    // Academic documents — only reject if it matches AND lacks resume structure
+    const academicPattern = /\b(study guide|exam guide|exam question|question paper|syllabus|lecture notes|textbook|homework|assignment submission|midterm|final exam|grading rubric|learning objectives|study material)\b/i;
+    if (academicPattern.test(cleanText)) {
+        const hasResumeStructure = /\b(work experience|professional experience|employment|skills|education|bachelor|master|degree)\b/i.test(cleanText);
+        if (!hasResumeStructure) {
+            return { valid: false, reason: 'Only resumes and CVs are allowed. This looks like an academic document, not a resume.' };
+        }
+    }
+    // Research papers — only reject if it has multiple research markers AND no resume structure
+    const researchMarkers = ['abstract', 'methodology', 'literature review', 'bibliography', 'doi:'].filter(
+        term => cleanText.toLowerCase().includes(term)
+    );
+    if (researchMarkers.length >= 2) {
+        const hasResumeStructure = /\b(work experience|professional experience|career objective|professional summary|skills|education)\b/i.test(cleanText);
+        if (!hasResumeStructure) {
+            return { valid: false, reason: 'Only resumes and CVs are allowed. This looks like a research paper, not a resume.' };
+        }
+    }
+
+    // ── Positive Resume Section Detection ──
+    // A real resume must match AT LEAST 2 of these career-specific sections.
+
+    const sectionKeywords = [
+        /\b(work experience|professional experience|employment history|employment|job history)\b/i,
+        /\b(education|bachelor|master|degree|diploma|gpa|cgpa)\b/i,
+        /\b(skills|technical skills|technologies|proficiencies|tech stack|core competencies)\b/i,
+        /\b(personal projects|key projects|academic projects|portfolio)\b/i,
+        /\b(certifications|certificates|licenses|accreditations)\b/i,
+        /\b(professional summary|executive summary|career objective|about me)\b/i,
+        /\b(achievements|awards|honors|distinctions|hackathon)\b/i,
+        /\b(contact|email|phone|linkedin|github)\b/i
+    ];
+
+    let matchCount = 0;
+    for (const kw of sectionKeywords) {
+        if (kw.test(cleanText)) matchCount++;
+    }
+
+    const roleKeywords = /\b(engineer|developer|manager|analyst|designer|consultant|lead|director|intern|internship|specialist|coordinator|architect|administrator|associate|assistant|programmer|scientist|representative)\b/i;
+    const hasRole = roleKeywords.test(cleanText);
+
+    // Need at least 2 section matches, or 1 section + a role keyword
+    if (matchCount < 2 && !(matchCount === 1 && hasRole)) {
+        return { valid: false, reason: 'Only resumes and CVs are allowed. We couldn\'t find enough resume sections like Work Experience, Education, or Skills in this document.' };
+    }
+
+    return { valid: true };
+}
+
 // ─── UNIVERSAL AI PROMPT ──────────────────────────────────────────────────────
 
 const RUBRIC_SYSTEM_PROMPT = `You are the scoring and roasting engine for "Resume Roaster." You will receive a resume's text and a roast mode (Mild / Medium / Savage). Follow these steps in strict order.
+
+═══════════════════════════════
+STEP 0 — RESUME VALIDITY CHECK
+═══════════════════════════════
+Check if this document is a resume or CV. A resume is a document where a person presents their career history, education, skills, or projects for employment purposes.
+
+ACCEPT the document as a resume if it contains ANY of the following:
+- A person's name with their work experience, job titles, or companies
+- Education details (degrees, universities, coursework)
+- Skills or technical proficiencies listed
+- Projects the person has built or contributed to
+- Career objective or professional summary
+
+REJECT the document ONLY if it is clearly NOT a career document at all, for example:
+- Recipes, song lyrics, fiction, poetry
+- Academic textbooks, exam papers, study guides (not a person's resume)
+- Source code files, API docs, README files
+- News articles, blog posts, marketing copy
+- Invoices, contracts, legal documents
+- Random text, placeholder text, gibberish
+
+IMPORTANT: When in doubt, ACCEPT it as a resume and proceed to score it. Many resumes are poorly formatted or unconventional — still process them. Only reject documents that are OBVIOUSLY not someone's career profile.
+
+If it is NOT a resume, return ONLY this JSON and STOP:
+{
+  "isResume": false,
+  "rejectionReason": "Only resumes and CVs are allowed. The uploaded document is not a resume.",
+  "classification": { "field": "Non-Resume", "targetRole": "None", "experienceLevel": "None" },
+  "overallScore": 0,
+  "overallVerdict": "Document rejected: Not a resume.",
+  "headline": "This is not a resume.",
+  "verdict": "Not a resume.",
+  "categories": { "impact": 0, "formatting": 0, "brevity": 0, "buzzwords": 0 },
+  "strengths": [],
+  "weaknesses": ["Document is not a resume or career profile."],
+  "resumeBoosters": []
+}
+
+If the text IS a resume, set "isResume": true and proceed with Steps 1-6.
 
 ═══════════════════════════════
 STEP 1 — EXTRACT & CLASSIFY (From Document Only)
@@ -103,6 +338,7 @@ OUTPUT FORMAT — STRICT JSON ONLY
 ═══════════════════════════════
 Respond ONLY with a valid JSON object matching this structure (no markdown fences, no extra text):
 {
+  "isResume": true,
   "classification": {
     "field": "Tech",
     "targetRole": "Full Stack Developer",
@@ -279,6 +515,27 @@ async function callAnthropicApi(resumeText, roastMode) {
 
 function generateSimulatedRoast(resumeText, roastMode) {
     roastMode = roastMode || 'constructive';
+    
+    // Gatekeeper validation
+    const validation = isValidResumeText(resumeText);
+    if (!validation.valid) {
+        return {
+            isResume: false,
+            rejectionReason: validation.reason,
+            classification: { field: 'Non-Resume', targetRole: 'None', experienceLevel: 'None' },
+            overallScore: 0,
+            overallVerdict: validation.reason,
+            headline: "This document is not a resume.",
+            verdict: "Please provide a valid resume.",
+            categories: { impact: 0, formatting: 0, brevity: 0, buzzwords: 0 },
+            strengths: [],
+            weaknesses: [validation.reason],
+            resumeBoosters: [],
+            isSimulated: true,
+            aiProvider: 'Validator Engine'
+        };
+    }
+
     const textLower = resumeText.toLowerCase();
 
     // 1. Domain & Target Role Detection
@@ -342,6 +599,7 @@ function generateSimulatedRoast(resumeText, roastMode) {
     }
 
     return {
+        isResume: true,
         classification: {
             field,
             targetRole,
@@ -417,10 +675,17 @@ async function runAiPipeline(resumeText, roastMode) {
     return generateSimulatedRoast(resumeText, roastMode);
 }
 
-// ─── MAIN ROUTE ───────────────────────────────────────────────────────────────
+// ─── MAIN ROUTE (AUTH-GATED) ──────────────────────────────────────────────────
 
 app.post('/roast', roastLimiter, async (req, res) => {
     try {
+        // Check Authentication Gate
+        if (!req.session || !req.session.user) {
+            return res.status(401).json({
+                error: 'Authentication required. Please sign in with Google to roast your resume.'
+            });
+        }
+
         let extractedText = '';
 
         if (req.files && req.files.resume) {
@@ -455,12 +720,42 @@ app.post('/roast', roastLimiter, async (req, res) => {
             });
         }
 
+        // Pre-flight Resume Validation Gatekeeper
+        const preCheck = isValidResumeText(extractedText);
+        if (!preCheck.valid) {
+            console.warn(`[Roast Pipeline] Non-resume document rejected for user "${req.session.user.name || req.session.user.email}": ${preCheck.reason}`);
+            return res.status(400).json({
+                success: false,
+                isResume: false,
+                error: preCheck.reason
+            });
+        }
+
         const wordCount = extractedText.split(/\s+/).filter(Boolean).length;
         const characterCount = extractedText.length;
         const roastMode = req.body.roastMode || 'constructive';
 
-        console.log(`[Roast Pipeline] Processing resume (${wordCount} words, tone: ${roastMode})...`);
+        console.log(`[Roast Pipeline] User "${req.session.user.name || req.session.user.email}" processing resume (${wordCount} words, tone: ${roastMode})...`);
         const aiAnalysis = await runAiPipeline(extractedText, roastMode);
+
+        // Check if AI Gatekeeper determined it's not a resume
+        const nonResumePattern = /not a resume|instead of a resume|isn't a resume|is not a resume|not a cv|isn't a cv|rather than a resume|academic .*(textbook|document|paper|guide)|study guide|not .*career/i;
+        const aiNotResume = aiAnalysis && (
+            aiAnalysis.isResume === false ||
+            (aiAnalysis.classification && aiAnalysis.classification.field === 'Non-Resume') ||
+            (aiAnalysis.headline && nonResumePattern.test(aiAnalysis.headline)) ||
+            (aiAnalysis.overallVerdict && nonResumePattern.test(aiAnalysis.overallVerdict)) ||
+            (aiAnalysis.verdict && nonResumePattern.test(aiAnalysis.verdict))
+        );
+        if (aiNotResume) {
+            const reason = aiAnalysis.rejectionReason || aiAnalysis.headline || 'Not a resume';
+            console.warn(`[Roast Pipeline] AI Gatekeeper classified document as Non-Resume: ${reason}`);
+            return res.status(400).json({
+                success: false,
+                isResume: false,
+                error: 'Only resumes and CVs are allowed. Please upload a document containing your work experience, education, and skills.'
+            });
+        }
 
         res.json({
             success: true,
@@ -489,8 +784,10 @@ module.exports = {
     app,
     extractPdfText,
     cleanAndParseJson,
+    isValidResumeText,
     generateSimulatedRoast,
     runAiPipeline,
+    verifyGoogleToken,
     callGeminiApi,
     callOpenAIApi,
     callAnthropicApi
