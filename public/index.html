@@ -3,147 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Roaster - AI Resume Analyzer</title>
+    <title>Resume Roaster — AI Career Critique</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔥 Resume Roaster</h1>
-            <p>Upload your resume to receive instant feedback, critique, and actionable improvements</p>
-        </div>
+    <!-- AMBIENT VOLCANIC GLOW ORBS -->
+    <div class="ambient-glow glow-top"></div>
+    <div class="ambient-glow glow-center"></div>
 
-        <div class="tabs">
-            <button type="button" class="tab-btn active" id="tabUpload">Upload File (.PDF / .TXT)</button>
-            <button type="button" class="tab-btn" id="tabPaste">Paste Raw Text</button>
-        </div>
+    <div class="page-container">
+        <!-- TOP BRAND NAV -->
+        <nav class="top-nav">
+            <div class="brand-badge">
+                <span class="flame-pulse">🔥</span>
+                <span class="brand-text">RESUME ROASTER</span>
+            </div>
+            <div class="live-pill">
+                <span class="live-dot"></span>
+                <span>AI MODEL LIVE</span>
+            </div>
+        </nav>
 
-        <form id="roastForm">
-            <div class="tab-content active" id="contentUpload">
-                <div class="dropzone" id="dropzone">
-                    <div class="dropzone-icon">📄</div>
-                    <p>Drag & drop your resume file here, or <span>browse</span></p>
-                    <p style="font-size: 0.8rem; margin-top: 0.25rem;">Supports PDF and TXT files</p>
-                    <div class="file-selected" id="fileNameDisplay"></div>
-                </div>
-                <input type="file" id="fileInput" accept=".pdf,.txt">
+        <!-- HERO SECTION -->
+        <header class="hero-section">
+            <h1 class="hero-headline">
+                YOUR RESUME DESERVES <br>
+                <span class="glow-text">A TRIAL BY FIRE.</span>
+            </h1>
+            <p class="hero-lead">
+                Unfiltered AI critique, real-world metric auditing, and actionable upgrades. No recruiter fluff, zero sugarcoating.
+            </p>
+        </header>
+
+        <!-- MAIN INTERACTION TERMINAL -->
+        <main class="terminal-card">
+            <!-- FLOATING PILL TABS -->
+            <div class="tab-pill-container" role="tablist">
+                <button type="button" class="tab-pill active" id="tabUpload" role="tab" aria-selected="true">
+                    <span class="tab-icon">📄</span>
+                    <span>Upload Resume</span>
+                </button>
+                <button type="button" class="tab-pill" id="tabPaste" role="tab" aria-selected="false">
+                    <span class="tab-icon">✍️</span>
+                    <span>Paste Raw Text</span>
+                </button>
             </div>
 
-            <div class="tab-content" id="contentPaste">
-                <textarea id="textInput" placeholder="Paste your resume contents here..."></textarea>
-            </div>
-
-            <div style="margin-top: 1rem; margin-bottom: 1.25rem;">
-                <label for="roastModeSelect" style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.4rem; font-weight: 500;">🔥 Select Roast Intensity & Tone:</label>
-                <select id="roastModeSelect" style="width: 100%; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; padding: 0.65rem 1rem; border-radius: 8px; font-family: inherit; font-size: 0.9rem; cursor: pointer; outline: none;">
-                    <option value="savage">🔥 Savage Roast (Brutally Honest & Witty)</option>
-                    <option value="constructive" selected>⚡ Constructive Audit (Balanced & Direct)</option>
-                    <option value="mild">🧘 Mild Critique (Encouraging & Gentle)</option>
-                </select>
-            </div>
-
-            <button type="submit" class="submit-btn" id="submitBtn">Roast & Analyze Resume 🔥</button>
-        </form>
-
-        <div class="error-message" id="errorMessage"></div>
-
-        <div class="loading-container" id="loadingContainer">
-            <div class="spinner"></div>
-            <p id="loadingStatusText">Firing up the roast engine...</p>
-        </div>
-
-        <div id="resultContainer">
-            <div class="simulated-banner" id="simulatedBanner" style="display: none;">
-                ℹ️ Running in <strong>Simulated AI Mode</strong> (Add <code>OPENAI_API_KEY</code> to <code>.env</code> to connect live GPT model).
-            </div>
-
-            <div class="gating-banner" id="gatingBanner" style="display: none;">
-                ⚠️ <strong>Tier-1 Gating Warning</strong>: Project & Skill baseline score was below threshold. Achievements bonus was capped to prevent inflated scoring without solid evidence.
-            </div>
-
-            <div class="classification-bar" id="classificationBar"></div>
-
-            <div class="score-header-card">
-                <div class="score-circle-wrap">
-                    <div class="score-circle" id="overallScoreBadge">0</div>
-                    <div class="score-label">OVERALL SCORE</div>
+            <form id="roastForm">
+                <!-- UPLOAD ZONE -->
+                <div class="tab-content active" id="contentUpload">
+                    <div class="molten-dropzone" id="dropzone">
+                        <div class="dropzone-core">
+                            <div class="icon-hearth">
+                                <span class="hearth-flame">🔥</span>
+                            </div>
+                            <h3 class="hearth-title">Drag & drop your resume into the hearth</h3>
+                            <p class="hearth-desc">Supports PDF and TXT documents • <span class="browse-btn-text">Browse Files</span></p>
+                            <div class="hearth-meta">
+                                <span class="meta-tag">PDF</span>
+                                <span class="meta-tag">TXT</span>
+                                <span class="meta-tag">MAX 10MB</span>
+                            </div>
+                        </div>
+                        <div class="file-selected" id="fileNameDisplay"></div>
+                    </div>
+                    <input type="file" id="fileInput" accept=".pdf,.txt">
                 </div>
-                <div class="score-headline-wrap">
-                    <blockquote class="roast-headline" id="roastHeadline">"Loading headline..."</blockquote>
-                    <div class="stats-badge">
-                        <span>Words: <strong id="statWords">0</strong></span>
-                        <span>Chars: <strong id="statChars">0</strong></span>
+
+                <!-- PASTE RAW TEXT -->
+                <div class="tab-content" id="contentPaste">
+                    <div class="editor-frame">
+                        <textarea id="textInput" placeholder="Paste your resume content here..."></textarea>
                     </div>
                 </div>
+
+                <!-- ROAST INTENSITY SELECTOR -->
+                <div class="intensity-module">
+                    <div class="module-header">
+                        <span class="module-title">Roast Intensity</span>
+                        <span class="module-hint">Select the critique tone</span>
+                    </div>
+                    <div class="intensity-tabs">
+                        <label class="intensity-option">
+                            <input type="radio" name="roastMode" value="mild">
+                            <div class="intensity-card">
+                                <span class="opt-emoji">🌱</span>
+                                <span class="opt-name">Mild</span>
+                                <span class="opt-desc">Encouraging & gentle</span>
+                            </div>
+                        </label>
+                        <label class="intensity-option">
+                            <input type="radio" name="roastMode" value="constructive" checked>
+                            <div class="intensity-card">
+                                <span class="opt-emoji">⚡</span>
+                                <span class="opt-name">Constructive</span>
+                                <span class="opt-desc">Direct & balanced</span>
+                            </div>
+                        </label>
+                        <label class="intensity-option">
+                            <input type="radio" name="roastMode" value="savage">
+                            <div class="intensity-card savage-card">
+                                <span class="opt-emoji">🔥</span>
+                                <span class="opt-name">Savage</span>
+                                <span class="opt-desc">Brutally honest</span>
+                            </div>
+                        </label>
+                    </div>
+                    <select id="roastModeSelect" style="display: none;">
+                        <option value="savage">savage</option>
+                        <option value="constructive" selected>constructive</option>
+                        <option value="mild">mild</option>
+                    </select>
+                </div>
+
+                <!-- IGNITE CTA BUTTON -->
+                <button type="submit" class="ignite-button" id="submitBtn">
+                    <span class="btn-shimmer"></span>
+                    <span class="btn-text">🔥 Ignite & Roast Resume</span>
+                </button>
+            </form>
+
+            <div class="error-message" id="errorMessage"></div>
+
+            <div class="loading-container" id="loadingContainer">
+                <div class="fire-pulse-loader">
+                    <div class="loader-flame">🔥</div>
+                </div>
+                <p id="loadingStatusText">Analyzing resume structure...</p>
             </div>
 
-            <div class="verdict-banner" id="verdictBanner"></div>
+            <!-- RESULTS SECTION -->
+            <div id="resultContainer">
+                <div class="simulated-banner" id="simulatedBanner" style="display: none;">
+                    ℹ️ Running in Simulated Mode.
+                </div>
 
-            <div class="categories-grid">
-                <div class="category-card">
-                    <div class="category-header">
-                        <span>💥 Impact Metrics</span>
-                        <span id="scoreImpact">0%</span>
+                <div class="gating-banner" id="gatingBanner" style="display: none;">
+                    ⚠️ <strong>Tier-1 Gating Notice</strong>: Baseline project evidence was below threshold.
+                </div>
+
+                <div class="classification-bar" id="classificationBar"></div>
+
+                <div class="score-header-card">
+                    <div class="score-circle-wrap">
+                        <div class="score-circle" id="overallScoreBadge">0</div>
+                        <div class="score-label">OVERALL SCORE</div>
                     </div>
-                    <div class="progress-bar-track">
-                        <div class="progress-bar-fill" id="barImpact" style="width: 0%"></div>
+                    <div class="score-headline-wrap">
+                        <blockquote class="roast-headline" id="roastHeadline">"Loading headline..."</blockquote>
+                        <div class="stats-badge">
+                            <span>Words: <strong id="statWords">0</strong></span>
+                            <span>Chars: <strong id="statChars">0</strong></span>
+                        </div>
                     </div>
                 </div>
-                <div class="category-card">
-                    <div class="category-header">
-                        <span>📐 Formatting & ATS</span>
-                        <span id="scoreFormatting">0%</span>
+
+                <div class="verdict-banner" id="verdictBanner"></div>
+
+                <div class="categories-grid">
+                    <div class="category-card">
+                        <div class="category-header">
+                            <span>💥 Impact Metrics</span>
+                            <span id="scoreImpact">0%</span>
+                        </div>
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="barImpact" style="width: 0%"></div>
+                        </div>
                     </div>
-                    <div class="progress-bar-track">
-                        <div class="progress-bar-fill" id="barFormatting" style="width: 0%"></div>
+                    <div class="category-card">
+                        <div class="category-header">
+                            <span>📐 Formatting & ATS</span>
+                            <span id="scoreFormatting">0%</span>
+                        </div>
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="barFormatting" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="category-card">
+                        <div class="category-header">
+                            <span>⚡ Brevity & Readability</span>
+                            <span id="scoreBrevity">0%</span>
+                        </div>
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="barBrevity" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="category-card">
+                        <div class="category-header">
+                            <span>🚫 Buzzword Index</span>
+                            <span id="scoreBuzzwords">0%</span>
+                        </div>
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="barBuzzwords" style="width: 0%"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="category-card">
-                    <div class="category-header">
-                        <span>⚡ Brevity & Readability</span>
-                        <span id="scoreBrevity">0%</span>
+
+                <div class="feedback-grid">
+                    <div class="feedback-card strengths-card">
+                        <h4>👍 Key Strengths</h4>
+                        <ul id="strengthsList"></ul>
                     </div>
-                    <div class="progress-bar-track">
-                        <div class="progress-bar-fill" id="barBrevity" style="width: 0%"></div>
-                    </div>
-                </div>
-                <div class="category-card">
-                    <div class="category-header">
-                        <span>🚫 Buzzword Index</span>
-                        <span id="scoreBuzzwords">0%</span>
-                    </div>
-                    <div class="progress-bar-track">
-                        <div class="progress-bar-fill" id="barBuzzwords" style="width: 0%"></div>
+                    <div class="feedback-card weaknesses-card">
+                        <h4>⚠️ Critical Gaps</h4>
+                        <ul id="weaknessesList"></ul>
                     </div>
                 </div>
+
+                <div class="boosters-card" id="boostersCard" style="display: none;">
+                    <h3>🌟 Strategic Profile Boosters</h3>
+                    <ul id="boostersList"></ul>
+                </div>
+
+                <details class="extracted-text-details">
+                    <summary>📄 View Extracted Resume Text</summary>
+                    <div class="preview-box" id="previewBox"></div>
+                </details>
             </div>
-
-            <div class="feedback-grid">
-                <div class="feedback-card strengths-card">
-                    <h4>👍 What is Good (Strengths)</h4>
-                    <ul id="strengthsList"></ul>
-                </div>
-                <div class="feedback-card weaknesses-card">
-                    <h4>⚠️ What Needs Improvement</h4>
-                    <ul id="weaknessesList"></ul>
-                </div>
-            </div>
-
-            <div class="boosters-card" id="boostersCard" style="display: none;">
-                <h3>🌟 Strategic Profile Boosters (Recommended Additions)</h3>
-                <ul id="boostersList"></ul>
-            </div>
-
-            <details class="extracted-text-details">
-                <summary>📄 View Raw Extracted Resume Text</summary>
-                <div class="preview-box" id="previewBox"></div>
-            </details>
-        </div>
+        </main>
     </div>
 
     <script src="script.js"></script>
 </body>
-</html>

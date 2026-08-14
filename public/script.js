@@ -107,12 +107,12 @@ roastForm.addEventListener('submit', async (e) => {
         formData.append('resumeText', text);
     }
 
-    const roastModeSelect = document.getElementById('roastModeSelect');
-    const roastMode = roastModeSelect ? roastModeSelect.value : 'constructive';
+    const checkedRadio = document.querySelector('input[name="roastMode"]:checked');
+    const roastMode = checkedRadio ? checkedRadio.value : (document.getElementById('roastModeSelect')?.value || 'constructive');
     formData.append('roastMode', roastMode);
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Analyzing Resume...';
+    submitBtn.innerHTML = '<span class="btn-label">IGNITING INCINERATOR... 🔥</span>';
     startLoadingAnimation();
 
     try {
@@ -134,18 +134,20 @@ roastForm.addEventListener('submit', async (e) => {
     } finally {
         stopLoadingAnimation();
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Roast & Analyze Resume 🔥';
+        submitBtn.innerHTML = '<span class="btn-flames">🔥🔥</span><span class="btn-label">INCINERATE & ROAST MY RESUME</span><span class="btn-flames">🔥🔥</span>';
     }
 });
 
 function startLoadingAnimation() {
     loadingContainer.style.display = 'block';
     const statusMessages = [
-        'Extracting target role & field from resume...',
-        'Checking Tier-1 baseline project gates...',
+        'Feeding resume into the incinerator... 🔥',
+        'Extracting target role & scanning for buzzword crimes...',
+        'Checking Tier-1 baseline project foundations...',
+        'Detecting unevidenced skill flexes & passive duties...',
+        'Brewing maximum emotional damage...',
         'Auditing metric density & action verbs...',
-        'Generating strategic profile boosters...',
-        'Finalizing your evaluation report...'
+        'Drafting strategic profile boosters & final verdict...'
     ];
     let msgIdx = 0;
     loadingStatusText.textContent = statusMessages[0];
