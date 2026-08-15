@@ -21,6 +21,11 @@ app.get('/app', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'app.html'));
 });
 
+// Serve dedicated Profile Settings Page
+app.get('/profile', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'profile.html'));
+});
+
 // ─── SESSION MANAGEMENT ───────────────────────────────────────────────────────
 
 app.use(cookieSession({

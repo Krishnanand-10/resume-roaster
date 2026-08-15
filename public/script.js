@@ -3,8 +3,6 @@
 const authModalBackdrop = document.getElementById('authModalBackdrop');
 const modalCloseBtn = document.getElementById('modalCloseBtn');
 const googleBtnContainer = document.getElementById('googleBtnContainer');
-const googleFallbackContainer = document.getElementById('googleFallbackContainer');
-const devLoginBtn = document.getElementById('devLoginBtn');
 
 const userProfileWrapper = document.getElementById('userProfileWrapper');
 const userAvatarBtn = document.getElementById('userAvatarBtn');
@@ -26,16 +24,27 @@ const openAppNavBtn = document.getElementById('openAppNavBtn');
 const ctaLoggedOut = document.getElementById('ctaLoggedOut');
 const ctaLoggedIn = document.getElementById('ctaLoggedIn');
 const heroGetStartedBtn = document.getElementById('heroGetStartedBtn');
-const heroSignUpBtn = document.getElementById('heroSignUpBtn');
 
 let currentUser = null;
 
+const authTitle = document.querySelector('.auth-title');
+const authFooter = document.querySelector('.auth-footer');
+const signInLink = document.getElementById('signInLink');
+
 // ─── MODAL CONTROLS ───────────────────────────────────────────────────────────
 
-function openAuthModal() {
+function openAuthModal(mode = 'signup') {
     if (authModalBackdrop) {
         authModalBackdrop.style.display = 'flex';
         initGoogleAuth();
+        
+        if (mode === 'signin') {
+            if (authTitle) authTitle.textContent = 'Sign In';
+            if (authFooter) authFooter.style.display = 'none';
+        } else {
+            if (authTitle) authTitle.textContent = 'Create an account';
+            if (authFooter) authFooter.style.display = 'block';
+        }
     }
 }
 
@@ -61,9 +70,15 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-if (navSignInBtn) navSignInBtn.addEventListener('click', openAuthModal);
-if (heroGetStartedBtn) heroGetStartedBtn.addEventListener('click', openAuthModal);
-if (heroSignUpBtn) heroSignUpBtn.addEventListener('click', openAuthModal);
+if (navSignInBtn) navSignInBtn.addEventListener('click', () => openAuthModal('signin'));
+if (heroGetStartedBtn) heroGetStartedBtn.addEventListener('click', () => openAuthModal('signup'));
+
+if (signInLink) {
+    signInLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        openAuthModal('signin');
+    });
+}
 
 // ─── PROFILE DROPDOWN INTERACTION ─────────────────────────────────────────────
 
@@ -158,15 +173,13 @@ async function initGoogleAuth() {
                 shape: 'pill',
                 text: 'continue_with',
                 logo_alignment: 'left',
-                width: 280
+                width: 400
             });
-            googleFallbackContainer.style.display = 'none';
         } else {
-            googleFallbackContainer.style.display = 'flex';
+            console.warn('Google Client ID missing or invalid.');
         }
     } catch (err) {
         console.warn('Google Auth init warning:', err);
-        googleFallbackContainer.style.display = 'flex';
     }
 }
 
@@ -187,23 +200,6 @@ async function handleGoogleCredentialResponse(response) {
         console.error('Google Sign-In error:', err);
         alert('Network error during Google Sign-In.');
     }
-}
-
-if (devLoginBtn) {
-    devLoginBtn.addEventListener('click', async () => {
-        try {
-            const res = await fetch('/auth/dev-login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const data = await res.json();
-            if (data.success) {
-                window.location.href = '/app';
-            }
-        } catch (err) {
-            console.error('Dev login failed:', err);
-        }
-    });
 }
 
 function setUserLoggedIn(user) {

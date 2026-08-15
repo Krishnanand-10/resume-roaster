@@ -1,17 +1,8 @@
 // ─── DEDICATED APP WORKSPACE SCRIPT ──────────────────────────────────────────
 
 const userProfileWrapper = document.getElementById('userProfileWrapper');
-const userAvatarBtn = document.getElementById('userAvatarBtn');
 const userAvatarImg = document.getElementById('userAvatarImg');
 const userAvatarInitial = document.getElementById('userAvatarInitial');
-
-const profileDropdownMenu = document.getElementById('profileDropdownMenu');
-const dropdownAvatarImg = document.getElementById('dropdownAvatarImg');
-const dropdownAvatarInitial = document.getElementById('dropdownAvatarInitial');
-const dropdownUserName = document.getElementById('dropdownUserName');
-const dropdownUserEmail = document.getElementById('dropdownUserEmail');
-const logoutDropdownBtn = document.getElementById('logoutDropdownBtn');
-const deleteAccountDropdownBtn = document.getElementById('deleteAccountDropdownBtn');
 
 // Workspace Tab Elements
 const tabUpload = document.getElementById('tabUpload');
@@ -80,83 +71,16 @@ async function initApp() {
 function renderUserProfile(user) {
     const displayName = user.name || (user.email ? user.email.split('@')[0] : 'User');
     const initial = (displayName.charAt(0) || 'U').toUpperCase();
-    const displayEmail = user.email || 'Google Account Connected';
-
-    dropdownUserName.textContent = displayName;
-    dropdownUserEmail.textContent = displayEmail;
 
     if (user.picture) {
         userAvatarImg.src = user.picture;
         userAvatarImg.style.display = 'block';
         userAvatarInitial.style.display = 'none';
-
-        dropdownAvatarImg.src = user.picture;
-        dropdownAvatarImg.style.display = 'block';
-        dropdownAvatarInitial.style.display = 'none';
     } else {
         userAvatarImg.style.display = 'none';
         userAvatarInitial.textContent = initial;
         userAvatarInitial.style.display = 'inline-block';
-
-        dropdownAvatarImg.style.display = 'none';
-        dropdownAvatarInitial.textContent = initial;
-        dropdownAvatarInitial.style.display = 'inline-block';
     }
-}
-
-// ─── PROFILE DROPDOWN INTERACTION ─────────────────────────────────────────────
-
-if (userAvatarBtn) {
-    userAvatarBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isOpen = profileDropdownMenu.style.display === 'block';
-        profileDropdownMenu.style.display = isOpen ? 'none' : 'block';
-        userAvatarBtn.setAttribute('aria-expanded', !isOpen);
-    });
-}
-
-document.addEventListener('click', (e) => {
-    if (profileDropdownMenu && !profileDropdownMenu.contains(e.target) && e.target !== userAvatarBtn) {
-        profileDropdownMenu.style.display = 'none';
-        if (userAvatarBtn) userAvatarBtn.setAttribute('aria-expanded', 'false');
-    }
-});
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && profileDropdownMenu && profileDropdownMenu.style.display === 'block') {
-        profileDropdownMenu.style.display = 'none';
-        if (userAvatarBtn) userAvatarBtn.setAttribute('aria-expanded', 'false');
-    }
-});
-
-if (logoutDropdownBtn) {
-    logoutDropdownBtn.addEventListener('click', async () => {
-        try {
-            await fetch('/auth/logout', { method: 'POST' });
-            window.location.href = '/';
-        } catch (err) {
-            console.error('Logout error:', err);
-            window.location.href = '/';
-        }
-    });
-}
-
-if (deleteAccountDropdownBtn) {
-    deleteAccountDropdownBtn.addEventListener('click', async () => {
-        const confirmed = window.confirm('Are you sure you want to delete your account and all session data? This action cannot be undone.');
-        if (confirmed) {
-            try {
-                const res = await fetch('/auth/delete-account', { method: 'POST' });
-                const data = await res.json();
-                if (data.success) {
-                    window.location.href = '/?deleted=true';
-                }
-            } catch (err) {
-                console.error('Delete account error:', err);
-                window.location.href = '/';
-            }
-        }
-    });
 }
 
 // ─── TAB SWITCHING & FILE DROPZONE ────────────────────────────────────────────
