@@ -13,14 +13,17 @@ const PORT = process.env.PORT || 3000;
 
 const publicPath = path.join(__dirname, 'public');
 
-// ─── SESSION MANAGEMENT ───────────────────────────────────────────────────────
+// ─── TRUST PROXY & SESSION MANAGEMENT ─────────────────────────────────────────
+
+app.set('trust proxy', 1);
 
 app.use(cookieSession({
     name: 'rr_session',
     keys: [process.env.SESSION_SECRET || 'resume-roaster-session-secret-key-10923847'],
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production'
+    httpOnly: true,
+    secure: false // Works seamlessly on both localhost and HTTPS reverse-proxies (Vercel)
 }));
 
 app.use(express.json());
