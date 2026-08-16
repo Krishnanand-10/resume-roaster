@@ -831,15 +831,15 @@ if (require.main === module) {
     });
 }
 
-module.exports = {
-    app,
-    extractPdfText,
-    cleanAndParseJson,
-    isValidResumeText,
-    generateSimulatedRoast,
-    runAiPipeline,
-    verifyGoogleToken,
-    callGeminiApi,
-    callOpenAIApi,
-    callAnthropicApi
-};
+app.app = app;
+app.extractPdfText = extractPdfText;
+app.cleanAndParseJson = cleanAndParseJson;
+app.isValidResumeText = isValidResumeText;
+app.generateSimulatedRoast = generateSimulatedRoast;
+app.runAiPipeline = runAiPipeline;
+app.verifyGoogleToken = verifyGoogleToken;
+app.callGeminiApi = callGeminiApi;
+app.callOpenAIApi = callOpenAIApi;
+app.callAnthropicApi = callAnthropicApi;
+
+module.exports = app;
