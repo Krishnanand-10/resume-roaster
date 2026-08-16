@@ -73,6 +73,25 @@ document.addEventListener('keydown', (e) => {
 if (navSignInBtn) navSignInBtn.addEventListener('click', () => openAuthModal('signin'));
 if (heroGetStartedBtn) heroGetStartedBtn.addEventListener('click', () => openAuthModal('signup'));
 
+const googleSignInBtn = document.getElementById('googleSignInBtn');
+if (googleSignInBtn) {
+    googleSignInBtn.addEventListener('click', async () => {
+        try {
+            const res = await fetch('/auth/dev-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'Krishnanand', email: 'krishnanand@example.com' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                window.location.href = '/app';
+            }
+        } catch (err) {
+            console.error('Dev Login error:', err);
+        }
+    });
+}
+
 if (signInLink) {
     signInLink.addEventListener('click', (e) => {
         e.preventDefault();
@@ -141,7 +160,9 @@ async function checkAuthStatus() {
         const data = await res.json();
         if (data.authenticated && data.user) {
             currentUser = data.user;
-            setUserLoggedIn(currentUser);
+            // If already logged in, automatically navigate straight to the workspace
+            window.location.href = '/app';
+            return;
         } else {
             setUserLoggedOut();
             const params = new URLSearchParams(window.location.search);

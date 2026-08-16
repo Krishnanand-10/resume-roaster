@@ -12,19 +12,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const publicPath = path.join(__dirname, 'public');
-app.use(express.static(publicPath));
-app.use(express.json());
-app.use(fileUpload());
-
-// Serve dedicated App Workspace Page
-app.get('/app', (req, res) => {
-    res.sendFile(path.join(publicPath, 'app.html'));
-});
-
-// Serve dedicated Profile Settings Page
-app.get('/profile', (req, res) => {
-    res.sendFile(path.join(publicPath, 'profile.html'));
-});
 
 // ─── SESSION MANAGEMENT ───────────────────────────────────────────────────────
 
@@ -35,6 +22,29 @@ app.use(cookieSession({
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production'
 }));
+
+app.use(express.json());
+app.use(fileUpload());
+
+// Auto-redirect logged in users visiting / directly to /app workspace
+app.get('/', (req, res, next) => {
+    if (req.session && req.session.user) {
+        return res.redirect('/app');
+    }
+    next();
+});
+
+app.use(express.static(publicPath));
+
+// Serve dedicated App Workspace Page
+app.get('/app', (req, res) => {
+    res.sendFile(path.join(publicPath, 'app.html'));
+});
+
+// Serve dedicated Profile Settings Page
+app.get('/profile', (req, res) => {
+    res.sendFile(path.join(publicPath, 'profile.html'));
+});
 
 // ─── GOOGLE AUTH HELPER ───────────────────────────────────────────────────────
 
