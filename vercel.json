@@ -2,15 +2,35 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/public/index.html"
+    },
+    {
       "source": "/app",
-      "destination": "/app.html"
+      "destination": "/public/app.html"
     },
     {
       "source": "/profile",
-      "destination": "/profile.html"
+      "destination": "/public/profile.html"
     },
     {
-      "source": "/auth/(.*)",
+      "source": "/styles.css",
+      "destination": "/public/styles.css"
+    },
+    {
+      "source": "/script.js",
+      "destination": "/public/script.js"
+    },
+    {
+      "source": "/app.js",
+      "destination": "/public/app.js"
+    },
+    {
+      "source": "/profile.js",
+      "destination": "/public/profile.js"
+    },
+    {
+      "source": "/auth/:path*",
       "destination": "/api/index.js"
     },
     {

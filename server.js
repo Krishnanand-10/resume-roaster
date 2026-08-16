@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fileUpload = require('express-fileupload');
-const pdfModule = require('pdf-parse');
 const rateLimit = require('express-rate-limit');
 const cookieSession = require('cookie-session');
 const { OAuth2Client } = require('google-auth-library');
@@ -169,19 +168,35 @@ const roastLimiter = rateLimit({
     }
 });
 
-// ─── PDF TEXT EXTRACTION ──────────────────────────────────────────────────────
+// ─── PDF TEXT EXTRACTION (LAZY LOADED FOR SERVERLESS COMPATIBILITY) ─────────
+
+let pdfModule = null;
+function getPdfParser() {
+    if (!pdfModule) {
+        try {
+            pdfModule = require('pdf-parse');
+        } catch (e) {
+            console.warn('[PDF Parser] Optional native pdf-parse load warning:', e.message);
+        }
+    }
+    return pdfModule;
+}
 
 async function extractPdfText(buffer) {
     try {
-        if (typeof pdfModule === 'function') {
-            const data = await pdfModule(buffer);
+        const mod = getPdfParser();
+        if (!mod) {
+            throw new Error('PDF parsing library could not be initialized in this environment. Please paste your resume text directly into the editor.');
+        }
+        if (typeof mod === 'function') {
+            const data = await mod(buffer);
             return (data && data.text) ? data.text : '';
-        } else if (pdfModule.PDFParse) {
-            const parser = new pdfModule.PDFParse({ data: buffer });
+        } else if (mod.PDFParse) {
+            const parser = new mod.PDFParse({ data: buffer });
             const data = await parser.getText();
             return (data && data.text) ? data.text : '';
         } else {
-            throw new Error('PDF parsing library incompatible');
+            throw new Error('PDF parsing library format incompatible');
         }
     } catch (err) {
         throw new Error('PDF Parse Failed: ' + err.message);
